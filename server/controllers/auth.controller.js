@@ -1,6 +1,7 @@
-import userModel from "../model/user.model.js";
-import bcrypt from "bcryptjs";
-import jwt from "jsonwebtoken"
+import userModel from '../model/user.model.js';
+import tokenBlackListModel from "../model/blacklist.model.js"
+import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
 
 /**
  * @name registerUserController
@@ -9,43 +10,41 @@ import jwt from "jsonwebtoken"
  */
 
 async function registerUserController(req, res) {
-  const { username, email, password } = req.body
+  const { username, email, password } = req.body;
   if (!username || !email || !password) {
     return res.status(400).json({
-      message: "Please provide username,email and password"
-    })
+      message: 'Please provide username,email and password',
+    });
   }
   const isUserAlreadyExists = await userModel.findOne({
-    $or: [{ username }, { email }]
-  }
-  )
+    $or: [{ username }, { email }],
+  });
   if (isUserAlreadyExists) {
     return res.status(400).json({
-      message: "Account with this Username and Email already exists"
-    })
+      message: 'Account with this Username and Email already exists',
+    });
   }
-  const hash = await bcrypt.hash(password, 10)
+  const hash = await bcrypt.hash(password, 10);
   const user = await userModel.create({
     username,
     email,
-    password: hash
-  })
+    password: hash,
+  });
   const token = jwt.sign(
     { id: user._id, username: user.username },
     process.env.JWT_SECRET,
-    { expiresIn: "1d" }
-  )
-  res.cookie("token", token,
-    {
-      httpOnly: true,
-      secure: true,
-      sameSite: "none"
-    })
+    { expiresIn: '1d' }
+  );
+  res.cookie('token', token, {
+    httpOnly: true,
+    secure: true,
+    sameSite: 'none',
+  });
   res.status(200).json({
-    message: "User registered successfully",
+    message: 'User registered successfully',
     token,
-    user: { id: user._id, username: user.username, email: user.email }
-  })
+    user: { id: user._id, username: user.username, email: user.email },
+  });
 }
 
 /**
@@ -55,38 +54,82 @@ async function registerUserController(req, res) {
  */
 
 async function loginUserController(req, res) {
-  const { email, password } = req.body
+  const { email, password } = req.body;
 
-  const user = await userModel.findOne({ email })
+  const user = await userModel.findOne({ email });
 
   if (!user) {
     return res.status(400).json({
-      message: "User not found"
-    })
+      message: 'User not found',
+    });
   }
 
-  const isPasswordValid = await bcrypt.compare(password, user.password)
+  const isPasswordValid = await bcrypt.compare(password, user.password);
   if (!isPasswordValid) {
-    return req.status(400).json({
-      message: "Given password is incorrect"
-    })
+    return res.status(400).json({
+      message: 'Given password is incorrect',
+    });
   }
   const token = jwt.sign(
     { id: user._id, username: user.username },
     process.env.JWT_SECRET,
-    { expiresIn: "1d" }
-  )
-  res.cookie("token", token,
-    {
-      httpOnly: true,
-      secure: true,
-      sameSite: "none"
-    })
+    { expiresIn: '1d' }
+  );
+  res.cookie('token', token, {
+    httpOnly: true,
+    secure: true,
+    sameSite: 'none',
+  });
   res.status(200).json({
-    message: "User logged in  successfully",
+    message: 'User logged in  successfully',
     token,
-    user: { id: user._id, username: user.username, email: user.email }
+    user: { id: user._id, username: user.username, email: user.email },
+  });
+}
+
+/**
+ * @name logoutUserController
+ * @description Logut the  user
+ * @access Public
+ */
+
+async function logoutUserController(req, res) {
+  const authHeader = req.headers.authorization
+  const token = authHeader && authHeader.startsWith('Bearer') ? authHeader.split(" ")[1]:null
+
+  if(token){
+    await tokenBlackListModel.create({token})
+  }
+
+  res.status(200).json({
+    message: "User logged out successfully"
   })
 }
 
-export default {registerUserController,loginUserController}
+/**
+ * @name getMeUserController
+ * @description To fetch the data of teh user
+ * @access Public
+ */
+
+async function getMeUserController(req,res) {
+  const user = await userModel.findById(req.user.id)
+
+  if(!user){
+    return res.status(404).json({
+      message: "User not found with this ID"
+    })
+  }
+
+  res.status(200).json({
+    message: "The data of the user is fetched successfully",
+    user: {
+      id: user._id,
+      username: user.username,
+      email: user.email,
+    }
+  })
+}
+
+
+export default { registerUserController, loginUserController, logoutUserController , getMeUserController};
