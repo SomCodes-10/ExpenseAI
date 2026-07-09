@@ -1,6 +1,8 @@
 import express from 'express';
 import authController from '../controllers/auth.controller.js';
 import authUser from '../middlewares/auth.Middleware.js';
+import { registerValidator,loginValidator } from '../validators/auth.validator.js';
+
 
 const authRouter = express.Router();
 
@@ -10,7 +12,7 @@ const authRouter = express.Router();
  * @access Public
  */
 
-authRouter.post('/register', authController.registerUserController);
+authRouter.post('/register', registerValidator, authController.registerUserController);
 
 /**
  * @route POST /api/auth/login
@@ -18,7 +20,7 @@ authRouter.post('/register', authController.registerUserController);
  * @access Public
  */
 
-authRouter.post('/login', authController.loginUserController);
+authRouter.post('/login', loginValidator, authController.loginUserController);
 
 /**
  * @route POST /api/auth/logout
@@ -35,5 +37,7 @@ authRouter.post("/logout",authController.logoutUserController)
  */
 
 authRouter.get('/getme',authUser,authController.getMeUserController)
+
+
 
 export default authRouter;

@@ -9,13 +9,10 @@ import jwt from 'jsonwebtoken';
  * @access Public
  */
 
-async function registerUserController(req, res) {
+async function registerUserController(req, res,next) {
+  try{
   const { username, email, password } = req.body;
-  if (!username || !email || !password) {
-    return res.status(400).json({
-      message: 'Please provide username,email and password',
-    });
-  }
+
   const isUserAlreadyExists = await userModel.findOne({
     $or: [{ username }, { email }],
   });
@@ -45,6 +42,9 @@ async function registerUserController(req, res) {
     token,
     user: { id: user._id, username: user.username, email: user.email },
   });
+}catch(error){
+  next(error);
+}
 }
 
 /**
@@ -53,7 +53,8 @@ async function registerUserController(req, res) {
  * @access Public
  */
 
-async function loginUserController(req, res) {
+async function loginUserController(req, res,next) {
+  try{
   const { email, password } = req.body;
 
   const user = await userModel.findOne({ email });
@@ -85,6 +86,9 @@ async function loginUserController(req, res) {
     token,
     user: { id: user._id, username: user.username, email: user.email },
   });
+}catch(error){
+  next(error);
+}
 }
 
 /**
@@ -93,7 +97,8 @@ async function loginUserController(req, res) {
  * @access Public
  */
 
-async function logoutUserController(req, res) {
+async function logoutUserController(req, res,next) {
+  try{
   const authHeader = req.headers.authorization
   const token = authHeader && authHeader.startsWith('Bearer') ? authHeader.split(" ")[1]:null
 
@@ -104,6 +109,9 @@ async function logoutUserController(req, res) {
   res.status(200).json({
     message: "User logged out successfully"
   })
+}catch(error){
+  next(error);
+}
 }
 
 /**
@@ -112,7 +120,8 @@ async function logoutUserController(req, res) {
  * @access Public
  */
 
-async function getMeUserController(req,res) {
+async function getMeUserController(req,res,next) {
+  try{
   const user = await userModel.findById(req.user.id)
 
   if(!user){
@@ -129,6 +138,9 @@ async function getMeUserController(req,res) {
       email: user.email,
     }
   })
+}catch(error){
+  next(error);
+}
 }
 
 

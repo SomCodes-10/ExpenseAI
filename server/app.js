@@ -3,6 +3,7 @@ import dotenv from 'dotenv';
 import connectDB from './config/db.js';
 import healthRouter from './routes/health.js';
 import authRouter from './routes/auth.routes.js';
+import errorHandler from './middlewares/error.middleware.js'
 
 dotenv.config();
 
@@ -12,6 +13,7 @@ const port = 3000;
 app.use(express.json());
 app.use('/api/health', healthRouter);
 app.use('/api/auth', authRouter);
+app.use(errorHandler);
 
 const startServer = async () => {
   try {
