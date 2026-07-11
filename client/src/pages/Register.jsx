@@ -1,36 +1,34 @@
-import React from 'react'
-import logo from "../assets/logo.svg"
+import React from 'react';
+import logo from '../assets/logo.svg';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { registerSchema } from "../validation/auth.schema"
+import apiClient from "../lib/axios"
 
-/**
- * Register Page — Premium Dark SaaS UI
- *
- * UI Improvements (mirrors the Login card for design consistency):
- *  - Full-viewport vertically & horizontally centered layout
- *  - Auth card: surface bg (#18181B), 1px border (#27272A), rounded-2xl
- *  - Logo constrained to h-9; tagline headline below for brand identity
- *  - Sub-heading in muted text to reinforce visual hierarchy
- *  - Inputs: taller py-2.5 touch target, sky-blue focus border + ring halo
- *  - "Forgot password?" link removed from register (not contextually relevant
- *    on a sign-up flow — moved to Password label row which is now label-only)
- *  - CTA button: solid sky-blue (#38BDF8), near-black text, full-width
- *  - Footer: 1px divider line + "Already have an account?" nav link
- *  - Mobile-first, caps at max-w-sm on larger screens
- */
+
+ 
 const Register = () => {
+
+  const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm({
+      resolver: zodResolver(registerSchema)
+    })
+
+    const onSubmit =async(data)=>{
+      try{
+          const response = await apiClient.post("/auth/register",data);
+          console.log("Account cretaed Successfully:", response.data);
+      }catch(error){
+        console.log(error)
+      }
+  }
   return (
     /* Page wrapper — inherits #09090B background from :root in index.css */
     <div className="flex min-h-screen flex-col items-center justify-center px-4 py-12 sm:px-6 lg:px-8">
-
       {/* ── Auth Card ──────────────────────────────────────────────────── */}
       <div className="w-full max-w-sm rounded-2xl border border-[#27272A] bg-[#18181B] px-8 py-10 shadow-xl shadow-black/40">
-
         {/* ── Brand Header ───────────────────────────────────────────── */}
         <div className="mb-8 flex flex-col items-center gap-4">
-          <img
-            src={logo}
-            alt="ExpenseAI logo"
-            className="h-14 w-auto"
-          />
+          <img src={logo} alt="ExpenseAI logo" className="h-14 w-auto" />
           <div className="text-center">
             {/* Original tagline headline preserved exactly */}
             <h2 className="text-2xl font-semibold tracking-tight text-[#F8FAFC]">
@@ -38,14 +36,13 @@ const Register = () => {
             </h2>
             {/* Sub-heading: contextual to registration flow */}
             <p className="mt-1.5 text-sm text-[#94A3B8]">
-              Create your free ExpenseAI account
+              Create your free SpendWise account
             </p>
           </div>
         </div>
 
         {/* ── Form ───────────────────────────────────────────────────── */}
-        <form action="#" method="POST" className="space-y-5">
-
+        <form onSubmit={handleSubmit(onSubmit)} action="#" method="POST" className="space-y-5">
           {/* Username ───────────────────────────────────────────────── */}
           <div className="space-y-1.5">
             <label
@@ -57,14 +54,15 @@ const Register = () => {
             {/* Same input treatment as Login for design system consistency:
                 bg-white/5 tint, brand border, sky-blue focus ring halo */}
             <input
-              id="username"
               type="text"
-              name="username"
-              required
+             {...register("username")}
               autoComplete="username"
               placeholder="yourname"
-              className="block w-full rounded-lg border border-[#27272A] bg-white/5 px-3.5 py-2.5 text-sm text-[#F8FAFC] placeholder:text-[#94A3B8] outline-none transition-colors duration-150 focus:border-[#38BDF8] focus:ring-2 focus:ring-[#38BDF8]/20"
+              className={`block w-full rounded-lg border border-[#27272A] bg-white/5 px-3.5 py-2.5 text-sm text-[#F8FAFC] placeholder:text-[#94A3B8] outline-none transition-colors duration-150 focus:border-[#38BDF8] focus:ring-2 focus:ring-[#38BDF8]/20 ${errors.username ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20' : 'border-[#27272A] focus:border-[#38BDF8] focus:ring-[#38BDF8]/20'}`}
             />
+            {errors.username && (
+              <p className="text-xs text-red-500 mt-1">{errors.username.message}</p>
+            )}
           </div>
 
           {/* Email ──────────────────────────────────────────────────── */}
@@ -76,14 +74,18 @@ const Register = () => {
               Email address
             </label>
             <input
-              id="email"
+           
               type="email"
-              name="email"
-              required
+              {...register("email")}
+             
               autoComplete="email"
               placeholder="you@example.com"
-              className="block w-full rounded-lg border border-[#27272A] bg-white/5 px-3.5 py-2.5 text-sm text-[#F8FAFC] placeholder:text-[#94A3B8] outline-none transition-colors duration-150 focus:border-[#38BDF8] focus:ring-2 focus:ring-[#38BDF8]/20"
+              className={`block w-full rounded-lg border border-[#27272A] bg-white/5 px-3.5 py-2.5 text-sm text-[#F8FAFC] placeholder:text-[#94A3B8] outline-none transition-colors duration-150 focus:border-[#38BDF8] focus:ring-2 focus:ring-[#38BDF8]/20 ${errors.email ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20' : 'border-[#27272A] focus:border-[#38BDF8] focus:ring-[#38BDF8]/20'}`}
+
             />
+            {errors.email && (
+              <p className="text-xs text-red-500 mt-1">{errors.email.message}</p>
+            )}
           </div>
 
           {/* Password ───────────────────────────────────────────────── */}
@@ -97,22 +99,19 @@ const Register = () => {
               >
                 Password
               </label>
-              <a
-                href="#"
-                className="text-xs font-medium text-[#38BDF8] transition-colors duration-150 hover:text-[#7DD3FC]"
-              >
-                Forgot password?
-              </a>
+          
             </div>
             <input
-              id="password"
+              
               type="password"
-              name="password"
-              required
+              {...register("password")}
               autoComplete="current-password"
               placeholder="••••••••"
-              className="block w-full rounded-lg border border-[#27272A] bg-white/5 px-3.5 py-2.5 text-sm text-[#F8FAFC] placeholder:text-[#94A3B8] outline-none transition-colors duration-150 focus:border-[#38BDF8] focus:ring-2 focus:ring-[#38BDF8]/20"
+              className={`block w-full rounded-lg border border-[#27272A] bg-white/5 px-3.5 py-2.5 text-sm text-[#F8FAFC] placeholder:text-[#94A3B8] outline-none transition-colors duration-150 focus:border-[#38BDF8] focus:ring-2 focus:ring-[#38BDF8]/20 ${errors.password ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20' : 'border-[#27272A] focus:border-[#38BDF8] focus:ring-[#38BDF8]/20'}`}
             />
+            {errors.password && (
+              <p className="text-xs text-red-500 mt-1">{errors.password.message}</p>
+            )}
           </div>
 
           {/* CTA Button ─────────────────────────────────────────────── */}
@@ -140,10 +139,9 @@ const Register = () => {
             </a>
           </p>
         </div>
-
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default Register
+export default Register;

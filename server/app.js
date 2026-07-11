@@ -4,16 +4,23 @@ import connectDB from './config/db.js';
 import healthRouter from './routes/health.js';
 import authRouter from './routes/auth.routes.js';
 import errorHandler from './middlewares/error.middleware.js'
+import cors from "cors";
 
 dotenv.config();
 
 const app = express();
 const port = 3000;
 
+app.use(cors({
+  origin: "http://localhost:5173", 
+  credentials: true
+}));
+
 app.use(express.json());
 app.use('/api/health', healthRouter);
 app.use('/api/auth', authRouter);
 app.use(errorHandler);
+
 
 const startServer = async () => {
   try {
