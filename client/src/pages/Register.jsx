@@ -2,25 +2,42 @@ import React from 'react';
 import logo from '../assets/logo.svg';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { registerSchema } from "../validation/auth.schema"
-import apiClient from "../lib/axios"
+import { registerSchema } from '../validation/auth.schema';
+import apiClient from '../lib/axios';
+import { useNavigate } from 'react-router-dom';
+import { useAuthStore } from '@/store/auth.store';
+import { setErrorMap } from 'zod/v3';
 
-
- 
 const Register = () => {
+  const navigate = useNavigate();
+  const loginAuth = useAuthStore((state) => state.login);
 
-  const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm({
-      resolver: zodResolver(registerSchema)
-    })
+  const {
+    register,
+    handleSubmit,
+    setError,
+    formState: { errors, isSubmitting },
+  } = useForm({
+    resolver: zodResolver(registerSchema),
+  });
 
-    const onSubmit =async(data)=>{
-      try{
-          const response = await apiClient.post("/auth/register",data);
-          console.log("Account cretaed Successfully:", response.data);
-      }catch(error){
-        console.log(error)
+  const onSubmit = async (data) => {
+    try {
+      const response = await apiClient.post('/auth/register', data);
+      if (response.data.token) {
+        loginAuth(response.data.user || null, response.data.token);
+        console.log('Account was created and user was logged in automatically');
+        navigate('/dashboard');
+      } else {
+        alert('Account successfully created! Please login.');
+        navigate('/login');
       }
-  }
+    } catch (error) {
+      const errorMessage =
+        error.response?.data?.error || 'Registration failed. Try again!';
+      setError('root', { type: 'manual', message: errorMessage });
+    }
+  };
   return (
     /* Page wrapper — inherits #09090B background from :root in index.css */
     <div className="flex min-h-screen flex-col items-center justify-center px-4 py-12 sm:px-6 lg:px-8">
@@ -42,7 +59,12 @@ const Register = () => {
         </div>
 
         {/* ── Form ───────────────────────────────────────────────────── */}
-        <form onSubmit={handleSubmit(onSubmit)} action="#" method="POST" className="space-y-5">
+        <form
+          onSubmit={handleSubmit(onSubmit)}
+          action="#"
+          method="POST"
+          className="space-y-5"
+        >
           {/* Username ───────────────────────────────────────────────── */}
           <div className="space-y-1.5">
             <label
@@ -55,13 +77,15 @@ const Register = () => {
                 bg-white/5 tint, brand border, sky-blue focus ring halo */}
             <input
               type="text"
-             {...register("username")}
+              {...register('username')}
               autoComplete="username"
               placeholder="yourname"
               className={`block w-full rounded-lg border border-[#27272A] bg-white/5 px-3.5 py-2.5 text-sm text-[#F8FAFC] placeholder:text-[#94A3B8] outline-none transition-colors duration-150 focus:border-[#38BDF8] focus:ring-2 focus:ring-[#38BDF8]/20 ${errors.username ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20' : 'border-[#27272A] focus:border-[#38BDF8] focus:ring-[#38BDF8]/20'}`}
             />
             {errors.username && (
-              <p className="text-xs text-red-500 mt-1">{errors.username.message}</p>
+              <p className="text-xs text-red-500 mt-1">
+                {errors.username.message}
+              </p>
             )}
           </div>
 
@@ -74,17 +98,17 @@ const Register = () => {
               Email address
             </label>
             <input
-           
               type="email"
-              {...register("email")}
-             
+              {...register('email')}
+
               autoComplete="email"
               placeholder="you@example.com"
               className={`block w-full rounded-lg border border-[#27272A] bg-white/5 px-3.5 py-2.5 text-sm text-[#F8FAFC] placeholder:text-[#94A3B8] outline-none transition-colors duration-150 focus:border-[#38BDF8] focus:ring-2 focus:ring-[#38BDF8]/20 ${errors.email ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20' : 'border-[#27272A] focus:border-[#38BDF8] focus:ring-[#38BDF8]/20'}`}
-
             />
             {errors.email && (
-              <p className="text-xs text-red-500 mt-1">{errors.email.message}</p>
+              <p className="text-xs text-red-500 mt-1">
+                {errors.email.message}
+              </p>
             )}
           </div>
 
@@ -99,18 +123,18 @@ const Register = () => {
               >
                 Password
               </label>
-          
             </div>
             <input
-              
               type="password"
-              {...register("password")}
+              {...register('password')}
               autoComplete="current-password"
               placeholder="••••••••"
               className={`block w-full rounded-lg border border-[#27272A] bg-white/5 px-3.5 py-2.5 text-sm text-[#F8FAFC] placeholder:text-[#94A3B8] outline-none transition-colors duration-150 focus:border-[#38BDF8] focus:ring-2 focus:ring-[#38BDF8]/20 ${errors.password ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20' : 'border-[#27272A] focus:border-[#38BDF8] focus:ring-[#38BDF8]/20'}`}
             />
             {errors.password && (
-              <p className="text-xs text-red-500 mt-1">{errors.password.message}</p>
+              <p className="text-xs text-red-500 mt-1">
+                {errors.password.message}
+              </p>
             )}
           </div>
 
