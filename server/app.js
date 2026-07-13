@@ -5,6 +5,7 @@ import healthRouter from './routes/health.js';
 import authRouter from './routes/auth.routes.js';
 import errorHandler from './middlewares/error.middleware.js'
 import cors from "cors";
+import transactionRouter from './routes/transaction.routes.js'
 
 dotenv.config();
 
@@ -19,6 +20,7 @@ app.use(cors({
 app.use(express.json());
 app.use('/api/health', healthRouter);
 app.use('/api/auth', authRouter);
+app.use('/api/transactions',transactionRouter)
 app.use(errorHandler);
 
 
