@@ -1,6 +1,7 @@
 import express from "express";
 import authUser from "../middlewares/auth.Middleware.js";
 import transactionController from "../controllers/transaction.controller.js";
+import { validateResult } from "../validators/transaction.validator.js";
 
 const transactionRouter = express.Router()
 
@@ -10,7 +11,15 @@ const transactionRouter = express.Router()
  * @access Private
  */
 
-transactionRouter.post("/",authUser,transactionController.createTransactionController)
+transactionRouter.post("/",authUser,validateResult,transactionController.createTransactionController)
+
+/**
+ * @route   GET /api/transactions/stats
+ * @desc    Get dashboard statistics (Total Income, Total Expenses, Balance, Category Breakdown, Daily Spending)
+ * @access  Private
+ */
+
+transactionRouter.get("/stats",authUser,transactionController.getTransactionStatsController)
 
 /**
  * @route  GET /api/transactions
@@ -26,7 +35,7 @@ transactionRouter.get("/",authUser,transactionController.getTransactionControlle
  * @access Private
  */
 
-transactionRouter.put("/:id",authUser,transactionController.updateTransactionController)
+transactionRouter.put("/:id",authUser,validateResult,transactionController.updateTransactionController)
 
 /**
  * @route  DELETE /api/transactions
@@ -35,13 +44,5 @@ transactionRouter.put("/:id",authUser,transactionController.updateTransactionCon
  */
 
 transactionRouter.delete("/:id",authUser,transactionController.deleteTransactionController)
-
-/**
- * @route   GET /api/transactions/stats
- * @desc    Get dashboard statistics (Total Income, Total Expenses, Balance, Category Breakdown, Daily Spending)
- * @access  Private
- */
-
-transactionRouter.get("/stats",authUser,transactionController.getTransactionStatsController)
 
 export default transactionRouter;

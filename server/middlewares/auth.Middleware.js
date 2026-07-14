@@ -11,14 +11,14 @@ async function authUser(req,res,next) {
     })
   }
 
-  const isTokenBlacklisted = await tokenBlackListModel.findOne({token})
-  if(isTokenBlacklisted){
-    return res.status(401).json({
-      message: "Token has been revoked"
-    })
-  }
-
   try {
+    const isTokenBlacklisted = await tokenBlackListModel.findOne({token})
+    if(isTokenBlacklisted){
+      return res.status(401).json({
+        message: "Token has been revoked"
+      })
+    }
+
     const decoded = jwt.verify(token,process.env.JWT_SECRET)
     req.user = decoded
 

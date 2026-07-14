@@ -28,7 +28,7 @@ async function registerUserController(req, res,next) {
     password: hash,
   });
   const token = jwt.sign(
-    { id: user._id, username: user.username },
+    { id: user.id, username: user.username },
     process.env.JWT_SECRET,
     { expiresIn: '1d' }
   );
@@ -40,7 +40,7 @@ async function registerUserController(req, res,next) {
   res.status(200).json({
     message: 'User registered successfully',
     token,
-    user: { id: user._id, username: user.username, email: user.email },
+    user: { id: user.id, username: user.username, email: user.email },
   });
 }catch(error){
   next(error);
@@ -72,7 +72,7 @@ async function loginUserController(req, res,next) {
     });
   }
   const token = jwt.sign(
-    { id: user._id, username: user.username },
+    { id: user.id, username: user.username },
     process.env.JWT_SECRET,
     { expiresIn: '1d' }
   );
@@ -84,7 +84,7 @@ async function loginUserController(req, res,next) {
   res.status(200).json({
     message: 'User logged in  successfully',
     token,
-    user: { id: user._id, username: user.username, email: user.email },
+    user: { id: user.id, username: user.username, email: user.email },
   });
 }catch(error){
   next(error);
@@ -133,7 +133,7 @@ async function getMeUserController(req,res,next) {
   res.status(200).json({
     message: "The data of the user is fetched successfully",
     user: {
-      id: user._id,
+      id: user.id,
       username: user.username,
       email: user.email,
     }
