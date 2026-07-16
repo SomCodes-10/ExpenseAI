@@ -41,13 +41,13 @@ const StatCard = ({ title, amount = 0, type }) => {
       {/* Top accent gradient bar */}
       <div className={`absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r ${currentConfig.accentBar} opacity-70`} />
 
-      <div className="p-6 flex items-center justify-between gap-4">
+      <div className="p-4 sm:p-6 flex items-center justify-between gap-3 sm:gap-4">
         {/* Left: label + amount */}
         <div className="min-w-0">
-          <p className="text-xs font-semibold uppercase tracking-widest text-slate-400 mb-2">
+          <p className="text-[10px] sm:text-xs font-semibold uppercase tracking-widest text-slate-400 mb-1.5 sm:mb-2">
             {title}
           </p>
-          <h3 className={`text-2xl font-bold tracking-tight ${currentConfig.amountColor}`}>
+          <h3 className={`text-xl sm:text-2xl font-bold tracking-tight truncate ${currentConfig.amountColor}`}>
             {/* ✅ Indian Currency format integration */}
             {amount < 0
               ? `-₹${Math.abs(amount).toLocaleString("en-IN")}`
@@ -58,7 +58,7 @@ const StatCard = ({ title, amount = 0, type }) => {
 
         {/* Right: icon pill */}
         <div className={`
-          flex-shrink-0 w-12 h-12 rounded-xl flex items-center justify-center
+          flex-shrink-0 w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center
           ${currentConfig.iconBg} ${currentConfig.iconColor}
           ring-1 ${currentConfig.iconRing}
           transition-transform duration-300 group-hover:scale-110
