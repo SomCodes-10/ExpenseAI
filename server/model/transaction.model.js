@@ -19,10 +19,19 @@ const transactionSchema = new mongoose.Schema({
     type: String,
     required: [true,'PLease select a category']
   },
-  date: {
-    type: Date,
-    default: Date.now
-  },
+  date: { 
+  type: Date, 
+  default: Date.now,
+  validate: {
+    validator: function(v) {
+      // Din ke end tak ki date allow karo taaki timezone issue na aaye
+      const endOfToday = new Date();
+      endOfToday.setHours(23, 59, 59, 999);
+      return v <= endOfToday;
+    },
+    message: 'Are you from future?'
+  }
+},
   description:{
     type: String,
     trim: true,

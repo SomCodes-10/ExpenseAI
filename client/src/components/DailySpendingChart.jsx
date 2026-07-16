@@ -29,7 +29,7 @@ const DailySpendingChart = ({ data = [] }) => {
     <div className="w-full h-[300px] mt-4">
       {/* ResponsiveContainer ensures the chart stretches perfectly to fit its parent div */}
       <ResponsiveContainer width="100%" height="100%">
-        <LineChart data={formattedData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+        <LineChart data={formattedData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
 
           {/* Subtle Grid Lines */}
           <CartesianGrid stroke="#f3f4f6" strokeDasharray="5 5" vertical={false} />

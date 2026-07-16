@@ -33,14 +33,16 @@ const transactionValidationRules = [
       return true;
     }),
    body('date').notEmpty().withMessage("Date cannot be empty").isISO8601().withMessage("Date must be in ISO 8601 format")
-               .custom((value) =>{
-                const inputDate = new Date(value)
-                const today = new Date()
-                today.setHours(0,0,0,0)
-                if (inputDate > today){
-                  throw new Error("Are you from future Mate? Date cannot be greater than today")
-                }
-                return true
+               .custom((value) => {
+                 // Compare as local date strings to avoid UTC vs local timezone mismatch.
+                 // new Date("2026-07-16") parses as UTC midnight, which is ahead of
+                 // local midnight in IST (+5:30), causing today's date to fail the check.
+                 const inputDateStr = new Date(value).toISOString().split('T')[0];
+                 const todayStr = new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD in local time
+                 if (inputDateStr > todayStr) {
+                   throw new Error("Are you from future Mate? Date cannot be greater than today");
+                 }
+                 return true;
                })
 
 ];

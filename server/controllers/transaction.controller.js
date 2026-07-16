@@ -202,9 +202,10 @@ async function getTransactionStatsController(req, res) {
         }
       }
     ]);
+    const recentTransactions = await transactionModel.find({userId: userId}).sort({date: -1, createdAt: -1}).limit(5)
     const result = stats[0];
     const overall = result.overallStats[0] || { totalIncome: 0, totalExpenses: 0, balance: 0 };
-
+                        
     res.status(200).json({
       success: true,
       data: {
@@ -212,7 +213,8 @@ async function getTransactionStatsController(req, res) {
         totalExpenses: overall.totalExpenses,
         balance: overall.balance,
         categoryBreakdown: result.categoryBreakdown,
-        dailySpending: result.dailySpending
+        dailySpending: result.dailySpending,
+        recentTransactions: recentTransactions
       }
     });
   }catch(error){
