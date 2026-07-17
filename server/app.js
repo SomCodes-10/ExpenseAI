@@ -13,16 +13,17 @@ dotenv.config();
 const app = express();
 const port = process.env.PORT || 3000;
 
-app.use(cors({
-  origin: "http://localhost:5173", 
-  credentials: true
-}));
-
+const corsOptions = {
+  origin: 'https://expense-ai-jet.vercel.app', 
+  credentials: true, 
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+};
 app.use(express.json());
 app.use('/api/health', healthRouter);
 app.use('/api/auth', authRouter);
 app.use('/api/transactions',transactionRouter)
 app.use('/api/ai',aiRouter)
+app.use(cors(corsOptions));
 app.use(errorHandler);
 
 
