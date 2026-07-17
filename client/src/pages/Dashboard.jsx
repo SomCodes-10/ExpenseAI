@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import StatCard from '../components/StatCard';
+import StatCard from '../components/Statcard';
 import apiClient from '@/lib/axios';
 import DailySpendingChart from '@/components/DailySpendingChart';
 import CategoryDonutChart from '@/components/CategoryDonutChart';
