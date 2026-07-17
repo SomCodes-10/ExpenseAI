@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import StatCard from '../components/Statcard';
+import Statcard from '../components/Statcard';
 import apiClient from '@/lib/axios';
 import DailySpendingChart from '@/components/DailySpendingChart';
 import CategoryDonutChart from '@/components/CategoryDonutChart';
@@ -11,7 +11,7 @@ const Pulse = ({ className }) => (
   <div className={`animate-pulse rounded-xl bg-slate-100 ${className}`} />
 );
 
-const StatCardSkeleton = () => (
+const StatcardSkeleton = () => (
   <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
     <div className="h-0.5 bg-slate-100" />
     <div className="p-6 flex items-center justify-between gap-4">
@@ -104,9 +104,9 @@ const DashboardSkeleton = () => (
 
       {/* Stat cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-5">
-        <StatCardSkeleton />
-        <StatCardSkeleton />
-        <StatCardSkeleton />
+        <StatcardSkeleton />
+        <StatcardSkeleton />
+        <StatcardSkeleton />
       </div>
 
       {/* Donut chart */}
@@ -277,9 +277,9 @@ const Dashboard = () => {
 
         {/* Stat Cards Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-5">
-          <StatCard title="Total Balance" amount={stats.balance} type="balance" />
-          <StatCard title="Total Income" amount={stats.totalIncome} type="income" />
-          <StatCard title="Total Expense" amount={stats.totalExpenses} type="expense" />
+          <Statcard title="Total Balance" amount={stats.balance} type="balance" />
+          <Statcard title="Total Income" amount={stats.totalIncome} type="income" />
+          <Statcard title="Total Expense" amount={stats.totalExpenses} type="expense" />
         </div>
 
         {/* Donut Chart Section */}
