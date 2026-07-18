@@ -5,6 +5,7 @@ import DailySpendingChart from '@/components/DailySpendingChart';
 import CategoryDonutChart from '@/components/CategoryDonutChart';
 import RecentTransactions from '@/components/RecentTransactions';
 import AddTransactionModel from '@/components/AddTransactionModel';
+import { Navigate, useNavigate } from 'react-router-dom';
 
 /* ─── Skeleton primitives ───────────────────────────────────────────────── */
 const Pulse = ({ className }) => (
@@ -100,6 +101,7 @@ const DashboardSkeleton = () => (
           <Pulse className="h-3.5 w-52" />
         </div>
         <Pulse className="h-10 w-36 rounded-xl shrink-0" />
+       
       </div>
 
       {/* Stat cards */}
@@ -183,6 +185,8 @@ const Dashboard = () => {
     categoryBreakdown: []
   });
 
+
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -212,6 +216,12 @@ const Dashboard = () => {
       alert("Error adding transaction!");
     }
   };
+  
+const navigate = useNavigate();
+const handleTransaction = () =>{
+  navigate("/transaction")
+}
+
   useEffect(() => {
     fetchDashboardStats();
   }, []);
@@ -252,26 +262,50 @@ const Dashboard = () => {
             <p className="text-slate-400 text-xs sm:text-[15px] leading-snug">Your financial snapshot at a glance.</p>
           </div>
 
-          {/* Right: Premium Add Transaction Button */}
-          <button onClick={() => { setIsModalOpen(true) }}
-            className="group relative inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-white rounded-xl overflow-hidden transition-all duration-300 hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 focus-visible:ring-offset-2 shrink-0"
-            style={{
-              background: 'linear-gradient(135deg, #0EA5E9 0%, #06B6D4 60%, #6366F1 100%)',
-              boxShadow: '0 4px 14px rgba(14,165,233,0.40), 0 1px 3px rgba(0,0,0,0.10)',
-            }}
-          >
-            {/* Shimmer overlay on hover */}
-            <span
-              className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-              style={{ background: 'linear-gradient(135deg, rgba(255,255,255,0.15) 0%, transparent 60%)' }}
-            />
-            {/* Plus icon */}
-            <svg className="w-4 h-4 relative z-10" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
-              <line x1="8" y1="2" x2="8" y2="14" />
-              <line x1="2" y1="8" x2="14" y2="8" />
-            </svg>
-            <span className="relative z-10">Add Transaction</span>
-          </button>
+          {/* Right: Action Buttons */}
+          <div className="flex items-center gap-2.5 shrink-0">
+
+            {/* All Transactions— secondary ghost button */}
+            <button onClick={()=> {handleTransaction()}}
+              className="group relative inline-flex items-center gap-2 px-4 py-2.5 text-sm font-semibold text-sky-600 rounded-xl border border-sky-200 bg-white/70 backdrop-blur-sm overflow-hidden transition-all duration-300 hover:-translate-y-0.5 hover:border-sky-400 hover:bg-sky-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 focus-visible:ring-offset-2"
+              style={{ boxShadow: '0 1px 4px rgba(14,165,233,0.10), 0 1px 2px rgba(0,0,0,0.04)' }}
+            >
+              {/* Hover shimmer */}
+              <span
+                className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-xl"
+                style={{ background: 'linear-gradient(135deg, rgba(14,165,233,0.06) 0%, transparent 60%)' }}
+              />
+              {/* List icon */}
+              <svg className="w-4 h-4 relative z-10 shrink-0" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="2" y1="4" x2="14" y2="4" />
+                <line x1="2" y1="8" x2="14" y2="8" />
+                <line x1="2" y1="12" x2="10" y2="12" />
+              </svg>
+              <span className="relative z-10">All Transactions</span>
+            </button>
+
+            {/* Add Transaction — primary gradient button */}
+            <button onClick={() => { setIsModalOpen(true) }}
+              className="group relative inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-white rounded-xl overflow-hidden transition-all duration-300 hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 focus-visible:ring-offset-2"
+              style={{
+                background: 'linear-gradient(135deg, #0EA5E9 0%, #06B6D4 60%, #6366F1 100%)',
+                boxShadow: '0 4px 14px rgba(14,165,233,0.40), 0 1px 3px rgba(0,0,0,0.10)',
+              }}
+            >
+              {/* Shimmer overlay on hover */}
+              <span
+                className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                style={{ background: 'linear-gradient(135deg, rgba(255,255,255,0.15) 0%, transparent 60%)' }}
+              />
+              {/* Plus icon */}
+              <svg className="w-4 h-4 relative z-10" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
+                <line x1="8" y1="2" x2="8" y2="14" />
+                <line x1="2" y1="8" x2="14" y2="8" />
+              </svg>
+              <span className="relative z-10">Add Transaction</span>
+            </button>
+
+          </div>
 
         </div>
 

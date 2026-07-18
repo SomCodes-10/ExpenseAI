@@ -14,7 +14,11 @@ const app = express();
 const port = process.env.PORT || 3000;
 
 const corsOptions = {
-  origin: 'https://expense-ai-jet.vercel.app', 
+  // origin: 'https://expense-ai-jet.vercel.app',
+   origin: [
+    "http://localhost:5173",
+    "https://expense-ai-jet.vercel.app"
+  ],
   credentials: true, 
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
 };

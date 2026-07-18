@@ -3,6 +3,7 @@ import { Routes, Route } from 'react-router-dom';
 import Register from './pages/Register';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
+import Transaction from './pages/Transaction';
 import ProtectedRoute from './components/protectedRoute';
 function App() {
   return (
@@ -15,6 +16,11 @@ function App() {
         <Route path="/dashboard" element={ 
           <ProtectedRoute>
           <Dashboard /> 
+          </ProtectedRoute>
+          } />
+        <Route path="/transaction" element={ 
+          <ProtectedRoute>
+          <Transaction /> 
           </ProtectedRoute>
           } />
       </Routes>
