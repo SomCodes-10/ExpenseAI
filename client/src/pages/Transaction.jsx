@@ -1,36 +1,175 @@
-import apiClient from '@/lib/axios';
+﻿import apiClient from '@/lib/axios';
 import React from 'react';
-import { useState } from 'react';
-import { success } from 'zod';
+import { useState, useEffect } from 'react';
+import TransactionRow from './TransactionRow';
+import { useSearchParams } from "react-router-dom";
+
 /* ═══════════════════════════════════════════════════════════════
-   TRANSACTION PAGE  — UI only, no logic
+   TRANSACTION PAGE
    ═══════════════════════════════════════════════════════════════ */
 const Transaction = () => {
 
-  const [transactionData, setTransactionData] = useState([])
+  const [transactionData, setTransactionData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [type, setType] = useState("All");
+  const [category, setCategory] = useState([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
+
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [isInitialized, setIsInitialized] = useState(false);
+
+  /* -- Fetch transactions from API -- */
   const fetchTransactions = async () => {
     try {
-      setLoading(true)
-      setError(null)
-      const response = await apiClient.get('/transactions')
-      if(response.data?.success && response.data?.data){
-        setTransactionData(response.data.data)
+      setLoading(true);
+      setError(null);
+      const query = searchParams.toString();
+      const response = await apiClient.get('/transactions' + (query ? `?${query}` : ''));
+      if (response.data?.success && response.data?.data) {
+        setTransactionData(response.data.data);
       }
-    } catch (error) {
-       console.error("Error fetching stats:", error);
-      setError(error.response?.data?.message || "Failed to load transaction data");
-    }finally{
-      setLoading(false)
+    } catch (err) {
+      console.error("Error fetching transactions:", err);
+      setError(err.response?.data?.message || "Failed to load transaction data");
+    } finally {
+      setLoading(false);
     }
-  }
+  };
+
+  /* -- Initialise state from URL on mount -- */
+  useEffect(() => {
+    const selectedType = searchParams.get("type");
+    const selectedCategories = searchParams.get("categories");
+    const selectedSearch = searchParams.get("search");
+    const selectedFrom = searchParams.get("dateFrom");
+    const selectedTo = searchParams.get("dateTo");
+
+    if (selectedType) setType(selectedType);
+    if (selectedCategories) setCategory(selectedCategories.split(","));
+    if (selectedSearch) setSearchQuery(selectedSearch);
+    if (selectedFrom) setDateFrom(selectedFrom);
+    if (selectedTo) setDateTo(selectedTo);
+    setIsInitialized(true);
+  }, []);
+
+  /* -- Sync state to URL params whenever filters change -- */
+  useEffect(() => {
+    if (!isInitialized) return;
+    const params = {};
+    if (type !== "All") params.type = type;
+    if (category.length > 0) params.categories = category.join(',');
+    if (searchQuery) params.search = searchQuery;
+    if (dateFrom) params.dateFrom = dateFrom;
+    if (dateTo) params.dateTo = dateTo;
+    setSearchParams(params);
+  }, [type, category, searchQuery, dateFrom, dateTo, isInitialized]);
+
+  /* -- Re-fetch when URL params change -- */
   useEffect(() => {
     fetchTransactions();
-  }, [])
+  }, [searchParams]);
 
+  /* -- Category toggle -- */
+  const handleCategory = (cat) => {
+    setCategory(prev =>
+      prev.includes(cat) ? prev.filter(item => item !== cat) : [...prev, cat]
+    );
+  };
 
-  
+  /* -- Clear all filters -- */
+  const clearAllFilters = () => {
+    setType("All");
+    setCategory([]);
+    setSearchQuery("");
+    setDateFrom("");
+    setDateTo("");
+  };
+
+  /* -- Date group label -- */
+  const getDateLabel = (date) => {
+    const today = new Date();
+    const txnDate = new Date(date);
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+    if (today.toDateString() === txnDate.toDateString()) return "Today";
+    if (yesterday.toDateString() === txnDate.toDateString()) return "Yesterday";
+    return txnDate.toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' });
+  };
+
+  /* -- Client-side filter -- */
+  const filteredData = transactionData.filter((t) => {
+    const matchesType = type === "All" || t.type === type;
+    const matchesCategory = category.length === 0 || category.includes(t.category);
+    const desc = (t.description ?? '').toLowerCase();
+    const cat = (t.category ?? '').toLowerCase();
+    const q = searchQuery.toLowerCase();
+    const matchesSearch = !searchQuery || desc.includes(q) || cat.includes(q);
+
+    let matchesDate = true;
+    if (dateFrom || dateTo) {
+      const txnTime = new Date(t.date).getTime();
+      if (dateFrom) matchesDate = matchesDate && txnTime >= new Date(dateFrom).getTime();
+      if (dateTo) {
+        const toEnd = new Date(dateTo);
+        toEnd.setHours(23, 59, 59, 999);
+        matchesDate = matchesDate && txnTime <= toEnd.getTime();
+      }
+    }
+
+    return matchesType && matchesCategory && matchesSearch && matchesDate;
+  });
+
+  /* -- Group filtered data by date -- */
+  const groupedTransactions = filteredData.reduce((acc, transaction) => {
+    const label = getDateLabel(transaction.date);
+    if (!acc[label]) acc[label] = [];
+    acc[label].push(transaction);
+    return acc;
+  }, {});
+
+  /* -- Summary totals from filtered data -- */
+  const totalIncome = filteredData
+    .filter(t => t.type === 'income')
+    .reduce((sum, t) => sum + Number(t.amount || 0), 0);
+  const totalExpense = filteredData
+    .filter(t => t.type === 'expense')
+    .reduce((sum, t) => sum + Number(t.amount || 0), 0);
+
+  const hasActiveFilters =
+    type !== "All" || category.length > 0 || searchQuery || dateFrom || dateTo;
+
+  const EXPENSE_CATEGORIES = [
+    { key: "Food & Dining", emoji: "🍽️" },
+    { key: "Groceries", emoji: "🛒" },
+    { key: "Transportation", emoji: "🚗" },
+    { key: "Shopping", emoji: "🛍️" },
+    { key: "Bills & Utilities", emoji: "💡" },
+    { key: "Entertainment", emoji: "🎬" },
+    { key: "Healthcare", emoji: "🏥" },
+    { key: "Travel", emoji: "✈️" },
+    { key: "Investments", emoji: "📈" },
+    { key: "EMI / Loans", emoji: "🏦" },
+  ];
+
+  const INCOME_CATEGORIES = [
+    { key: "Salary", emoji: "💼" },
+    { key: "Freelancing", emoji: "💻" },
+    { key: "ROI", emoji: "📈" },
+    { key: "Bonus", emoji: "🎁" },
+    { key: "Gift", emoji: "🎀" },
+    { key: "Other", emoji: "📂" },
+  ];
+
+  const chipClass = (active) =>
+    `inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all duration-200 ${
+      active
+        ? "bg-sky-50 text-sky-600 border-sky-300"
+        : "bg-white text-slate-600 border-slate-200 hover:border-sky-300 hover:bg-sky-50 hover:text-sky-600"
+    }`;
+
   return (
     <div
       className="min-h-screen relative overflow-hidden"
@@ -39,20 +178,16 @@ const Transaction = () => {
         background: 'linear-gradient(135deg, #EFF6FF 0%, #F8FAFC 55%, #F0FDFF 100%)',
       }}
     >
-      {/* ── Google Font ── */}
       <style>{`@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');`}</style>
 
-      {/* ── Decorative background blobs ── */}
       <div aria-hidden="true" style={{ position: 'absolute', top: '-180px', left: '-140px', width: '560px', height: '560px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(56,189,248,0.07) 0%, transparent 70%)', filter: 'blur(56px)', pointerEvents: 'none' }} />
       <div aria-hidden="true" style={{ position: 'absolute', bottom: '-200px', right: '-160px', width: '600px', height: '600px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(103,232,249,0.06) 0%, transparent 70%)', filter: 'blur(64px)', pointerEvents: 'none' }} />
       <div aria-hidden="true" style={{ position: 'absolute', top: '35%', right: '6%', width: '320px', height: '320px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(167,210,255,0.08) 0%, transparent 70%)', filter: 'blur(40px)', pointerEvents: 'none' }} />
 
       <div className="max-w-6xl mx-auto px-4 py-6 sm:px-6 sm:py-10 lg:px-10">
 
-        {/* ════════════════════ PAGE HEADER ════════════════════ */}
+        {/* PAGE HEADER */}
         <div className="mb-6 sm:mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-
-          {/* Left: Badge + Title + Subtitle */}
           <div className="flex flex-col gap-1">
             <span
               className="inline-flex items-center gap-1.5 text-xs font-semibold text-sky-600 bg-sky-50 border border-sky-100 rounded-full px-3 py-1 tracking-wide w-fit"
@@ -64,15 +199,14 @@ const Transaction = () => {
               </svg>
               SpendWise AI
             </span>
-            <h1 className="text-xl sm:text-3xl font-bold text-slate-900 tracking-tight leading-tight">
+            <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight leading-tight">
               All Transactions
             </h1>
-            <p className="text-slate-400 text-xs sm:text-[15px] leading-snug">
+            <p className="text-slate-400 text-xs sm:text-[15px] leading-snug hidden sm:block">
               Browse, search and filter your complete transaction history.
             </p>
           </div>
 
-          {/* Right: Income / Expense summary pills */}
           <div className="flex items-center gap-3 shrink-0 flex-wrap">
             <div
               className="flex items-center gap-2 bg-white/80 backdrop-blur-sm border border-emerald-100 rounded-xl px-4 py-2.5"
@@ -81,7 +215,7 @@ const Transaction = () => {
               <span className="w-2 h-2 rounded-full bg-emerald-400 shrink-0" />
               <div>
                 <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wide leading-none mb-0.5">Income</p>
-                <p className="text-sm font-bold text-emerald-600">+₹0</p>
+                <p className="text-sm font-bold text-emerald-600">+₹{totalIncome.toLocaleString('en-IN')}</p>
               </div>
             </div>
             <div
@@ -91,24 +225,20 @@ const Transaction = () => {
               <span className="w-2 h-2 rounded-full bg-rose-400 shrink-0" />
               <div>
                 <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wide leading-none mb-0.5">Expense</p>
-                <p className="text-sm font-bold text-rose-500">-₹0</p>
+                <p className="text-sm font-bold text-rose-500">-₹{totalExpense.toLocaleString('en-IN')}</p>
               </div>
             </div>
           </div>
-
         </div>
 
-        {/* ════════════════════ FILTER PANEL ════════════════════ */}
+        {/* FILTER PANEL */}
         <div
           className="bg-white/80 backdrop-blur-sm rounded-2xl border border-slate-100 p-4 sm:p-6 mb-5 sm:mb-7"
           style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.04), 0 4px 16px rgba(14,165,233,0.06)' }}
         >
-
-          {/* ── Row 1: Search + Date Range ── */}
-          <div className="flex flex-col sm:flex-row gap-3 mb-5">
-
-            {/* Search input */}
-            <div className="relative flex-1">
+          {/* Search */}
+          <div className="mb-4">
+            <div className="relative">
               <span className="absolute inset-y-0 left-3.5 flex items-center pointer-events-none">
                 <svg className="w-4 h-4 text-slate-400" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                   <circle cx="8.5" cy="8.5" r="5.5" />
@@ -116,135 +246,148 @@ const Transaction = () => {
                 </svg>
               </span>
               <input
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
                 id="txn-search"
                 type="text"
                 placeholder="Search by description or category…"
                 className="w-full pl-10 pr-4 py-2.5 text-sm text-slate-700 placeholder-slate-400 bg-slate-50 border border-slate-200 rounded-xl outline-none transition-all duration-200 focus:border-sky-400 focus:ring-2 focus:ring-sky-100 focus:bg-white"
               />
             </div>
-
-            {/* Date: From */}
-            <div className="relative">
-              <label htmlFor="txn-date-from" className="absolute -top-2 left-3 text-[10px] font-semibold text-slate-400 bg-white px-1 rounded">From</label>
-              <input
-                id="txn-date-from"
-                type="date"
-                className="pl-3 pr-3 py-2.5 text-sm text-slate-700 bg-slate-50 border border-slate-200 rounded-xl outline-none transition-all duration-200 focus:border-sky-400 focus:ring-2 focus:ring-sky-100 focus:bg-white"
-              />
-            </div>
-
-            {/* Date: To */}
-            <div className="relative">
-              <label htmlFor="txn-date-to" className="absolute -top-2 left-3 text-[10px] font-semibold text-slate-400 bg-white px-1 rounded">To</label>
-              <input
-                id="txn-date-to"
-                type="date"
-                className="pl-3 pr-3 py-2.5 text-sm text-slate-700 bg-slate-50 border border-slate-200 rounded-xl outline-none transition-all duration-200 focus:border-sky-400 focus:ring-2 focus:ring-sky-100 focus:bg-white"
-              />
-            </div>
-
           </div>
 
-          {/* ── Row 2: Type Toggle ── */}
-          <div className="flex items-center gap-2 mb-4">
+          {/* Date range */}
+          <div className="mb-4">
+            <p className="text-xs font-semibold text-slate-500 mb-2 flex items-center gap-1.5">
+              <svg className="w-3.5 h-3.5 text-sky-400" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="2" y="3" width="12" height="11" rx="2" />
+                <line x1="2" y1="7" x2="14" y2="7" />
+                <line x1="5" y1="1" x2="5" y2="4" />
+                <line x1="11" y1="1" x2="11" y2="4" />
+              </svg>
+              Date Range
+            </p>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <div className="flex-1 flex flex-col gap-1">
+                <label htmlFor="txn-date-from" className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">From</label>
+                <input
+                  id="txn-date-from"
+                  type="date"
+                  value={dateFrom}
+                  max={dateTo || undefined}
+                  onChange={(e) => setDateFrom(e.target.value)}
+                  className="w-full px-3 py-2.5 text-sm text-slate-700 bg-slate-50 border border-slate-200 rounded-xl outline-none transition-all duration-200 focus:border-sky-400 focus:ring-2 focus:ring-sky-100 focus:bg-white cursor-pointer"
+                />
+              </div>
+              <div className="flex-1 flex flex-col gap-1">
+                <label htmlFor="txn-date-to" className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">To</label>
+                <input
+                  id="txn-date-to"
+                  type="date"
+                  value={dateTo}
+                  min={dateFrom || undefined}
+                  onChange={(e) => setDateTo(e.target.value)}
+                  className="w-full px-3 py-2.5 text-sm text-slate-700 bg-slate-50 border border-slate-200 rounded-xl outline-none transition-all duration-200 focus:border-sky-400 focus:ring-2 focus:ring-sky-100 focus:bg-white cursor-pointer"
+                />
+              </div>
+              {(dateFrom || dateTo) && (
+                <div className="flex sm:items-end">
+                  <button
+                    onClick={() => { setDateFrom(""); setDateTo(""); }}
+                    className="h-[42px] px-3 py-2 text-xs font-semibold text-slate-500 bg-slate-50 border border-slate-200 rounded-xl hover:bg-rose-50 hover:text-rose-500 hover:border-rose-200 transition-all duration-200 whitespace-nowrap self-end"
+                  >
+                    Clear dates
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Type Toggle */}
+          <div className="flex items-center gap-2 mb-4 flex-wrap">
             <span className="text-xs font-semibold text-slate-500 mr-1 shrink-0">Type:</span>
-
-            {/* All — active state shown as example */}
-            <button id="txn-type-all" className="px-4 py-1.5 rounded-lg text-xs font-semibold capitalize border bg-sky-500 text-white border-sky-500 shadow-sm transition-all duration-200">
-              All
-            </button>
-            <button id="txn-type-income" className="px-4 py-1.5 rounded-lg text-xs font-semibold capitalize border bg-white text-slate-500 border-slate-200 hover:border-slate-300 hover:bg-slate-50 transition-all duration-200">
-              Income
-            </button>
-            <button id="txn-type-expense" className="px-4 py-1.5 rounded-lg text-xs font-semibold capitalize border bg-white text-slate-500 border-slate-200 hover:border-slate-300 hover:bg-slate-50 transition-all duration-200">
-              Expense
-            </button>
+            {["All", "income", "expense"].map((t) => (
+              <button
+                key={t}
+                onClick={() => setType(t)}
+                id={`txn-type-${t.toLowerCase()}`}
+                className={`px-4 py-1.5 rounded-lg text-xs font-semibold capitalize border transition-all duration-200 ${
+                  type === t
+                    ? "bg-sky-500 text-white border-sky-500 shadow-sm"
+                    : "bg-white text-slate-500 border-slate-200 hover:border-slate-300 hover:bg-slate-50"
+                }`}
+              >
+                {t}
+              </button>
+            ))}
+            {hasActiveFilters && (
+              <button
+                onClick={clearAllFilters}
+                className="ml-auto px-3 py-1.5 rounded-lg text-xs font-semibold text-rose-500 bg-rose-50 border border-rose-100 hover:bg-rose-100 transition-all duration-200"
+              >
+                Clear all
+              </button>
+            )}
           </div>
 
-          {/* ── Row 3: Category Multi-Select Chips ── */}
+          {/* Category Chips */}
           <div>
             <div className="flex items-center justify-between mb-2.5">
               <span className="text-xs font-semibold text-slate-500">
                 Category <span className="text-slate-400 font-normal">(select multiple)</span>
               </span>
+              {category.length > 0 && (
+                <button
+                  onClick={() => setCategory([])}
+                  className="text-[10px] font-semibold text-sky-500 hover:text-sky-700 transition-colors"
+                >
+                  Clear ({category.length})
+                </button>
+              )}
             </div>
 
-            {/* Expense categories */}
             <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-2">Expense</p>
             <div className="flex flex-wrap gap-2 mb-4">
-              {/* Selected chip example */}
-              <button id="cat-chip-food-dining" className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border bg-sky-500 text-white border-sky-500 shadow-sm scale-[1.03] transition-all duration-200">
-                <span className="text-sm leading-none">🍽️</span> Food &amp; Dining
-              </button>
-              <button id="cat-chip-groceries" className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border bg-white text-slate-600 border-slate-200 hover:border-sky-300 hover:bg-sky-50 hover:text-sky-600 transition-all duration-200">
-                <span className="text-sm leading-none">🛒</span> Groceries
-              </button>
-              <button id="cat-chip-transportation" className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border bg-white text-slate-600 border-slate-200 hover:border-sky-300 hover:bg-sky-50 hover:text-sky-600 transition-all duration-200">
-                <span className="text-sm leading-none">🚗</span> Transportation
-              </button>
-              <button id="cat-chip-shopping" className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border bg-white text-slate-600 border-slate-200 hover:border-sky-300 hover:bg-sky-50 hover:text-sky-600 transition-all duration-200">
-                <span className="text-sm leading-none">🛍️</span> Shopping
-              </button>
-              <button id="cat-chip-bills-utilities" className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border bg-white text-slate-600 border-slate-200 hover:border-sky-300 hover:bg-sky-50 hover:text-sky-600 transition-all duration-200">
-                <span className="text-sm leading-none">💡</span> Bills &amp; Utilities
-              </button>
-              <button id="cat-chip-entertainment" className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border bg-white text-slate-600 border-slate-200 hover:border-sky-300 hover:bg-sky-50 hover:text-sky-600 transition-all duration-200">
-                <span className="text-sm leading-none">🎬</span> Entertainment
-              </button>
-              <button id="cat-chip-healthcare" className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border bg-white text-slate-600 border-slate-200 hover:border-sky-300 hover:bg-sky-50 hover:text-sky-600 transition-all duration-200">
-                <span className="text-sm leading-none">🏥</span> Healthcare
-              </button>
-              <button id="cat-chip-education" className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border bg-white text-slate-600 border-slate-200 hover:border-sky-300 hover:bg-sky-50 hover:text-sky-600 transition-all duration-200">
-                <span className="text-sm leading-none">📚</span> Education
-              </button>
-              <button id="cat-chip-travel" className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border bg-white text-slate-600 border-slate-200 hover:border-sky-300 hover:bg-sky-50 hover:text-sky-600 transition-all duration-200">
-                <span className="text-sm leading-none">✈️</span> Travel
-              </button>
-              <button id="cat-chip-investments-exp" className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border bg-white text-slate-600 border-slate-200 hover:border-sky-300 hover:bg-sky-50 hover:text-sky-600 transition-all duration-200">
-                <span className="text-sm leading-none">📈</span> Investments
-              </button>
-              <button id="cat-chip-emi-loans" className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border bg-white text-slate-600 border-slate-200 hover:border-sky-300 hover:bg-sky-50 hover:text-sky-600 transition-all duration-200">
-                <span className="text-sm leading-none">🏦</span> EMI / Loans
-              </button>
+              {EXPENSE_CATEGORIES.map(({ key, emoji }) => (
+                <button
+                  key={key}
+                  onClick={() => handleCategory(key)}
+                  id={`cat-chip-${key.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`}
+                  className={chipClass(category.includes(key))}
+                >
+                  <span className="text-sm leading-none">{emoji}</span> {key}
+                </button>
+              ))}
             </div>
 
-            {/* Income categories */}
             <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-2">Income</p>
             <div className="flex flex-wrap gap-2">
-              <button id="cat-chip-salary" className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border bg-white text-slate-600 border-slate-200 hover:border-sky-300 hover:bg-sky-50 hover:text-sky-600 transition-all duration-200">
-                <span className="text-sm leading-none">💼</span> Salary
-              </button>
-              <button id="cat-chip-freelancing" className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border bg-white text-slate-600 border-slate-200 hover:border-sky-300 hover:bg-sky-50 hover:text-sky-600 transition-all duration-200">
-                <span className="text-sm leading-none">💻</span> Freelancing
-              </button>
-              <button id="cat-chip-investments-inc" className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border bg-white text-slate-600 border-slate-200 hover:border-sky-300 hover:bg-sky-50 hover:text-sky-600 transition-all duration-200">
-                <span className="text-sm leading-none">📈</span> Investments
-              </button>
-              <button id="cat-chip-bonus" className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border bg-white text-slate-600 border-slate-200 hover:border-sky-300 hover:bg-sky-50 hover:text-sky-600 transition-all duration-200">
-                <span className="text-sm leading-none">🎁</span> Bonus
-              </button>
-              <button id="cat-chip-gift" className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border bg-white text-slate-600 border-slate-200 hover:border-sky-300 hover:bg-sky-50 hover:text-sky-600 transition-all duration-200">
-                <span className="text-sm leading-none">🎀</span> Gift
-              </button>
-              <button id="cat-chip-other" className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border bg-white text-slate-600 border-slate-200 hover:border-sky-300 hover:bg-sky-50 hover:text-sky-600 transition-all duration-200">
-                <span className="text-sm leading-none">📂</span> Other
-              </button>
+              {INCOME_CATEGORIES.map(({ key, emoji }) => (
+                <button
+                  key={key}
+                  onClick={() => handleCategory(key)}
+                  id={`cat-chip-${key.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`}
+                  className={chipClass(category.includes(key))}
+                >
+                  <span className="text-sm leading-none">{emoji}</span> {key}
+                </button>
+              ))}
             </div>
-
           </div>
         </div>
 
-        {/* ════════════════════ TRANSACTION TABLE ════════════════════ */}
+        {/* TRANSACTION TABLE */}
         <div
           className="bg-white rounded-2xl border border-slate-100 overflow-hidden"
           style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.04), 0 4px 16px rgba(14,165,233,0.06)' }}
         >
-
           {/* Table header */}
           <div className="px-4 sm:px-6 py-4 border-b border-slate-50 flex items-center justify-between gap-3">
             <h2 className="text-sm font-semibold text-slate-700">
               Transactions
-              <span className="ml-2 text-xs font-normal text-slate-400">— records</span>
+              <span className="ml-2 text-xs font-normal text-slate-400">
+                — {loading ? '…' : `${filteredData.length} record${filteredData.length !== 1 ? 's' : ''}`}
+              </span>
             </h2>
             <div className="flex items-center gap-2">
               <button id="txn-sort-btn" className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-500 bg-slate-50 border border-slate-200 rounded-lg hover:bg-slate-100 transition-colors duration-200">
@@ -265,58 +408,99 @@ const Transaction = () => {
             </div>
           </div>
 
-          {/* ── Empty state (shown when no data; swap with rows when you have data) ── */}
-          <div className="flex flex-col items-center justify-center gap-3 py-16 px-6">
-            <div className="w-14 h-14 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center">
-              <svg className="w-7 h-7 text-slate-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                <rect x="2" y="5" width="20" height="14" rx="3" />
-                <path d="M2 10h20" />
-              </svg>
+          {/* Loading */}
+          {loading && (
+            <div className="flex flex-col items-center justify-center gap-3 py-16 px-6">
+              <div className="w-8 h-8 rounded-full border-2 border-sky-200 border-t-sky-500 animate-spin" />
+              <p className="text-sm text-slate-400">Loading transactions…</p>
             </div>
-            <div className="text-center">
-              <p className="text-sm font-semibold text-slate-500">No transactions found</p>
-              <p className="text-xs text-slate-400 mt-0.5">Try adjusting your filters or search query.</p>
+          )}
+
+          {/* Error */}
+          {!loading && error && (
+            <div className="flex flex-col items-center justify-center gap-3 py-16 px-6">
+              <div className="w-12 h-12 rounded-2xl bg-rose-50 border border-rose-100 flex items-center justify-center">
+                <svg className="w-6 h-6 text-rose-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+                </svg>
+              </div>
+              <div className="text-center">
+                <p className="text-sm font-semibold text-slate-600">Something went wrong</p>
+                <p className="text-xs text-slate-400 mt-0.5">{error}</p>
+              </div>
+              <button onClick={fetchTransactions} className="px-4 py-2 text-sm font-semibold text-white rounded-xl" style={{ background: 'linear-gradient(135deg, #0EA5E9 0%, #06B6D4 100%)' }}>
+                Retry
+              </button>
             </div>
-          </div>
+          )}
 
-          {/*
-            ── Transaction rows (render this div instead of empty state when data exists) ──
-
-            <div className="divide-y divide-slate-50">
-              <div className="px-4 sm:px-6 py-3.5 sm:py-4 flex items-center justify-between gap-3 hover:bg-slate-50/70 transition-colors duration-150">
-
-                // Left: icon + details
-                <div className="flex items-center gap-3.5 min-w-0">
-                  <div className="w-10 h-10 rounded-full flex items-center justify-center text-base shrink-0 shadow-sm bg-rose-50 text-rose-500 border border-rose-100">
-                    🍽️
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-sm font-semibold text-slate-700 truncate">Food & Dining</p>
-                    <p className="text-xs text-slate-400 truncate">Dinner at restaurant</p>
-                    <p className="text-xs text-slate-400 mt-0.5">14 Jul 2026</p>
-                  </div>
-                </div>
-
-                // Right: amount + badge
-                <div className="flex flex-col items-end gap-1 shrink-0">
-                  <span className="text-sm font-bold text-rose-500">-₹1,240</span>
-                  <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-md uppercase tracking-wide bg-rose-50 text-rose-500">expense</span>
-                </div>
-
+          {/* Empty — no data at all */}
+          {!loading && !error && transactionData.length === 0 && (
+            <div className="flex flex-col items-center justify-center gap-3 py-16 px-6">
+              <div className="w-14 h-14 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center">
+                <svg className="w-7 h-7 text-slate-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="2" y="5" width="20" height="14" rx="3" />
+                  <path d="M2 10h20" />
+                </svg>
+              </div>
+              <div className="text-center">
+                <p className="text-sm font-semibold text-slate-500">No transactions yet</p>
+                <p className="text-xs text-slate-400 mt-0.5">Add your first transaction from the Dashboard.</p>
               </div>
             </div>
-          */}
+          )}
 
-          {/* Footer: pagination */}
+          {/* Empty — filtered but no results */}
+          {!loading && !error && transactionData.length > 0 && filteredData.length === 0 && (
+            <div className="flex flex-col items-center justify-center gap-3 py-16 px-6">
+              <div className="w-14 h-14 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center">
+                <svg className="w-7 h-7 text-slate-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
+                </svg>
+              </div>
+              <div className="text-center">
+                <p className="text-sm font-semibold text-slate-500">No transactions found</p>
+                <p className="text-xs text-slate-400 mt-0.5">Try adjusting your filters or date range.</p>
+              </div>
+              <button onClick={clearAllFilters} className="px-4 py-1.5 text-xs font-semibold text-sky-600 bg-sky-50 border border-sky-100 rounded-lg hover:bg-sky-100 transition-colors">
+                Clear all filters
+              </button>
+            </div>
+          )}
+
+          {/* Grouped list */}
+          {!loading && !error && filteredData.length > 0 && (
+            <div className="divide-y divide-slate-50">
+              {Object.keys(groupedTransactions).map((dateLabel) => (
+                <div key={dateLabel}>
+                  <div className="px-4 sm:px-6 pt-4 pb-1.5 flex items-center gap-3">
+                    <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">{dateLabel}</span>
+                    <span className="flex-1 h-px bg-slate-100" />
+                    <span className="text-[10px] text-slate-300 font-medium">
+                      {groupedTransactions[dateLabel].length} txn{groupedTransactions[dateLabel].length !== 1 ? 's' : ''}
+                    </span>
+                  </div>
+                  <div className="divide-y divide-slate-50">
+                    {groupedTransactions[dateLabel].map((transaction) => (
+                      <TransactionRow key={transaction._id} transaction={transaction} />
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Footer */}
           <div className="px-4 sm:px-6 py-3.5 border-t border-slate-50 flex items-center justify-between gap-3 bg-slate-50/40">
-            <p className="text-xs text-slate-400">Showing 0 of 0 transactions</p>
+            <p className="text-xs text-slate-400">
+              Showing {filteredData.length} of {transactionData.length} transactions
+            </p>
             <div className="flex items-center gap-1.5">
               <button id="txn-prev-page" className="px-2.5 py-1.5 text-xs font-semibold text-slate-400 bg-white border border-slate-200 rounded-lg hover:bg-slate-100 disabled:opacity-40 transition-colors" disabled>← Prev</button>
               <span className="px-2.5 py-1.5 text-xs font-semibold text-sky-600 bg-sky-50 border border-sky-100 rounded-lg">1</span>
               <button id="txn-next-page" className="px-2.5 py-1.5 text-xs font-semibold text-slate-400 bg-white border border-slate-200 rounded-lg hover:bg-slate-100 disabled:opacity-40 transition-colors" disabled>Next →</button>
             </div>
           </div>
-
         </div>
       </div>
     </div>

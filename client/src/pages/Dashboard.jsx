@@ -94,14 +94,16 @@ const DashboardSkeleton = () => (
     <div className="max-w-6xl mx-auto px-4 py-6 sm:px-6 sm:py-10 lg:px-10">
 
       {/* Header skeleton */}
-      <div className="mb-6 sm:mb-10 flex items-center justify-between gap-4">
+      <div className="mb-6 sm:mb-10 flex items-start justify-between gap-3">
         <div className="flex flex-col gap-2">
           <Pulse className="h-5 w-24 rounded-full" />
           <Pulse className="h-8 w-36" />
-          <Pulse className="h-3.5 w-52" />
+          <Pulse className="h-3.5 w-44 hidden sm:block" />
         </div>
-        <Pulse className="h-10 w-36 rounded-xl shrink-0" />
-       
+        <div className="flex flex-col sm:flex-row items-end sm:items-center gap-2 shrink-0">
+          <Pulse className="h-9 w-9 sm:w-36 rounded-xl" />
+          <Pulse className="h-9 w-9 sm:w-36 rounded-xl" />
+        </div>
       </div>
 
       {/* Stat cards */}
@@ -242,7 +244,7 @@ const handleTransaction = () =>{
       <div className="max-w-6xl mx-auto px-4 py-6 sm:px-6 sm:py-10 lg:px-10">
 
         {/* Header */}
-        <div className="mb-6 sm:mb-10 flex items-center justify-between gap-3">
+        <div className="mb-6 sm:mb-10 flex items-start justify-between gap-3">
 
           {/* Left: Badge + Title + Subtitle */}
           <div className="flex flex-col gap-1 min-w-0">
@@ -256,53 +258,53 @@ const handleTransaction = () =>{
               </svg>
               SpendWise AI
             </span>
-            <h1 className="text-xl sm:text-3xl font-bold text-slate-900 tracking-tight leading-tight">
+            <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight leading-tight">
               Dashboard
             </h1>
-            <p className="text-slate-400 text-xs sm:text-[15px] leading-snug">Your financial snapshot at a glance.</p>
+            <p className="text-slate-400 text-xs sm:text-[15px] leading-snug hidden sm:block">Your financial snapshot at a glance.</p>
           </div>
 
-          {/* Right: Action Buttons */}
-          <div className="flex items-center gap-2.5 shrink-0">
+          {/* Right: Action Buttons — icon-only on mobile, full label on sm+ */}
+          <div className="flex flex-col sm:flex-row items-end sm:items-center gap-2 shrink-0">
 
-            {/* All Transactions— secondary ghost button */}
-            <button onClick={()=> {handleTransaction()}}
-              className="group relative inline-flex items-center gap-2 px-4 py-2.5 text-sm font-semibold text-sky-600 rounded-xl border border-sky-200 bg-white/70 backdrop-blur-sm overflow-hidden transition-all duration-300 hover:-translate-y-0.5 hover:border-sky-400 hover:bg-sky-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 focus-visible:ring-offset-2"
+            {/* All Transactions — ghost button */}
+            <button
+              onClick={() => { handleTransaction() }}
+              aria-label="All Transactions"
+              className="group relative inline-flex items-center justify-center gap-2 h-9 w-9 sm:w-auto sm:px-4 sm:py-2 text-sm font-semibold text-sky-600 rounded-xl border border-sky-200 bg-white/70 backdrop-blur-sm overflow-hidden transition-all duration-300 hover:-translate-y-0.5 hover:border-sky-400 hover:bg-sky-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 focus-visible:ring-offset-2"
               style={{ boxShadow: '0 1px 4px rgba(14,165,233,0.10), 0 1px 2px rgba(0,0,0,0.04)' }}
             >
-              {/* Hover shimmer */}
               <span
                 className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-xl"
                 style={{ background: 'linear-gradient(135deg, rgba(14,165,233,0.06) 0%, transparent 60%)' }}
               />
-              {/* List icon */}
               <svg className="w-4 h-4 relative z-10 shrink-0" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
                 <line x1="2" y1="4" x2="14" y2="4" />
                 <line x1="2" y1="8" x2="14" y2="8" />
                 <line x1="2" y1="12" x2="10" y2="12" />
               </svg>
-              <span className="relative z-10">All Transactions</span>
+              <span className="relative z-10 hidden sm:inline">All Transactions</span>
             </button>
 
             {/* Add Transaction — primary gradient button */}
-            <button onClick={() => { setIsModalOpen(true) }}
-              className="group relative inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-white rounded-xl overflow-hidden transition-all duration-300 hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 focus-visible:ring-offset-2"
+            <button
+              onClick={() => { setIsModalOpen(true) }}
+              aria-label="Add Transaction"
+              className="group relative inline-flex items-center justify-center gap-2 h-9 w-9 sm:w-auto sm:px-4 sm:py-2 text-sm font-semibold text-white rounded-xl overflow-hidden transition-all duration-300 hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 focus-visible:ring-offset-2"
               style={{
                 background: 'linear-gradient(135deg, #0EA5E9 0%, #06B6D4 60%, #6366F1 100%)',
                 boxShadow: '0 4px 14px rgba(14,165,233,0.40), 0 1px 3px rgba(0,0,0,0.10)',
               }}
             >
-              {/* Shimmer overlay on hover */}
               <span
                 className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
                 style={{ background: 'linear-gradient(135deg, rgba(255,255,255,0.15) 0%, transparent 60%)' }}
               />
-              {/* Plus icon */}
               <svg className="w-4 h-4 relative z-10" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
                 <line x1="8" y1="2" x2="8" y2="14" />
                 <line x1="2" y1="8" x2="14" y2="8" />
               </svg>
-              <span className="relative z-10">Add Transaction</span>
+              <span className="relative z-10 hidden sm:inline">Add Transaction</span>
             </button>
 
           </div>
@@ -310,7 +312,7 @@ const handleTransaction = () =>{
         </div>
 
         {/* Stat Cards Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-5">
+        <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-5">
           <Statcard title="Total Balance" amount={stats.balance} type="balance" />
           <Statcard title="Total Income" amount={stats.totalIncome} type="income" />
           <Statcard title="Total Expense" amount={stats.totalExpenses} type="expense" />

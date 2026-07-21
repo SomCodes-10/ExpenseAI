@@ -34,10 +34,10 @@ const DailySpendingChart = ({ data = [] }) => {
     }
   })
   return (
-    <div className="w-full h-[220px] sm:h-[300px] mt-2">
+    <div className="w-full h-[200px] sm:h-[300px] mt-2">
       {/* ResponsiveContainer ensures the chart stretches perfectly to fit its parent div */}
       <ResponsiveContainer width="100%" height="100%">
-        <LineChart data={formattedData} margin={{ top: 10, right: 8, left: -10, bottom: 0 }}>
+        <LineChart data={formattedData} margin={{ top: 8, right: 4, left: -18, bottom: 0 }}>
 
           {/* Subtle Grid Lines */}
           <CartesianGrid stroke="#f1f5f9" strokeDasharray="5 5" vertical={false} />
@@ -46,19 +46,20 @@ const DailySpendingChart = ({ data = [] }) => {
           <XAxis
             dataKey="displayDate"
             stroke="#cbd5e1"
-            tick={{ fill: '#94a3b8', fontSize: 11 }}
+            tick={{ fill: '#94a3b8', fontSize: 10 }}
             tickLine={false}
             axisLine={false}
+            interval="preserveStartEnd"
           />
 
           {/* Y-Axis mapping to transaction amount totals */}
           <YAxis
             stroke="#cbd5e1"
-            tick={{ fill: '#94a3b8', fontSize: 11 }}
+            tick={{ fill: '#94a3b8', fontSize: 10 }}
             tickLine={false}
             axisLine={false}
             tickFormatter={(value) => `₹${value}`}
-            width={52}
+            width={44}
           />
 
           {/* Interactive Tooltip on Hover */}
