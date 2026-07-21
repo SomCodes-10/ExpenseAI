@@ -1,7 +1,8 @@
-﻿import apiClient from '@/lib/axios';
+import apiClient from '@/lib/axios';
 import React from 'react';
 import { useState, useEffect } from 'react';
 import TransactionRow from './TransactionRow';
+import AddTransactionModel from '../components/AddTransactionModel';
 import { useSearchParams } from "react-router-dom";
 
 /* ═══════════════════════════════════════════════════════════════
@@ -20,6 +21,7 @@ const Transaction = () => {
 
   const [searchParams, setSearchParams] = useSearchParams();
   const [isInitialized, setIsInitialized] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   /* -- Fetch transactions from API -- */
   const fetchTransactions = async () => {
@@ -503,6 +505,30 @@ const Transaction = () => {
           </div>
         </div>
       </div>
+
+      {/* ── Sticky FAB: Add Transaction ── */}
+      <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 sm:hidden">
+        <button
+          onClick={() => setIsModalOpen(true)}
+          className="inline-flex items-center gap-2.5 px-6 py-3.5 text-sm font-bold text-white rounded-full shadow-2xl transition-all duration-200 active:scale-95"
+          style={{
+            background: 'linear-gradient(135deg, #0EA5E9 0%, #06B6D4 55%, #6366F1 100%)',
+            boxShadow: '0 8px 24px rgba(14,165,233,0.45), 0 2px 8px rgba(0,0,0,0.12)',
+          }}
+        >
+          <svg className="w-5 h-5" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round">
+            <line x1="8" y1="2" x2="8" y2="14" />
+            <line x1="2" y1="8" x2="14" y2="8" />
+          </svg>
+          Add Transaction
+        </button>
+      </div>
+
+      <AddTransactionModel
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onSuccess={fetchTransactions}
+      />
     </div>
   );
 };
