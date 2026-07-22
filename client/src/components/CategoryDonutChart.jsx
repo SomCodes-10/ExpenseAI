@@ -32,7 +32,7 @@ const CategoryDonutChart = ({data = []}) => {
             outerRadius="55%"
             paddingAngle={4}
             dataKey="total"
-            nameKey="_id"
+            nameKey="name"
           >
             {data.map((entry, index) => (
               <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} strokeWidth={0} />

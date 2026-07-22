@@ -38,7 +38,15 @@ const transactionSchema = new mongoose.Schema({
     maxlength: [50, 'Description cannot be more than 50 characters']
   }
 },{
-  timestamps: true
+  timestamps: true,
+  toJSON: {
+    virtuals: true,           // include virtual `id` that Mongoose generates
+    transform(_doc, ret) {
+      ret.id = ret._id.toString(); // ensure it's a plain string, not ObjectId
+      delete ret._id;
+      delete ret.__v;
+    },
+  },
 });
 
 transactionSchema.index({userId: 1, date: -1})

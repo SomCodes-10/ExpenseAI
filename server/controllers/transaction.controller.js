@@ -44,13 +44,24 @@ async function createTransactionController(req, res) {
 async function getTransactionController(req, res) {
   try {
     let query = { userId: req.user.id };
-    const { category, month } = req.query;
-    if (category) {
-      query.category = category
+    const { type, categories, search, month } = req.query;
+    console.log(req.query);
+     console.log(query);
+
+    if (search) {
+      query.description = {
+        $regex: search,
+        $options: "i",
+      };
+    } if (type) {
+      query.type = type
     }
+      if (categories) {
+          query.category = { $in: categories.split(',') }; 
+        }
     if (month) {
       const [year, monthnum] = month.split('-')
-      const startDate = new Date(year, monthnum - 1, -1)
+      const startDate = new Date(year, monthnum - 1, 1)
       const endDate = new Date(year, monthnum, 0)
 
       query.date = {
@@ -156,38 +167,39 @@ async function deleteTransactionController(req, res) {
  *@access  Private (Requires valid JWT)
  */
 async function getTransactionStatsController(req, res) {
-  try{
+  try {
     const userId = new mongoose.Types.ObjectId(req.user.id)
     const stats = await transactionModel.aggregate([
       {
-        $match: {userId: userId}
+        $match: { userId: userId }
       },
       {
-        $facet:{
-          overallStats:[
+        $facet: {
+          overallStats: [
             {
               $group: {
                 _id: null,
-                totalIncome:{
-                  $sum: {$cond: [{$eq: ["$type","income"]},"$amount",0]}
+                totalIncome: {
+                  $sum: { $cond: [{ $eq: ["$type", "income"] }, "$amount", 0] }
                 },
-                totalExpenses:{
-                  $sum: {$cond: [{$eq: ["$type","expense"]},"$amount",0]}
+                totalExpenses: {
+                  $sum: { $cond: [{ $eq: ["$type", "expense"] }, "$amount", 0] }
                 }
               }
             },
-            {$project: {
-              _id: 0,
-              totalIncome:1,
-              totalExpenses:1,
-              balance:{$subtract: ["$totalIncome","$totalExpenses"]}
+            {
+              $project: {
+                _id: 0,
+                totalIncome: 1,
+                totalExpenses: 1,
+                balance: { $subtract: ["$totalIncome", "$totalExpenses"] }
+              }
             }
-          }
           ],
-          categoryBreakdown:[
-            {$match: {type: "expense"}},
-            {$group: {_id: "$category",total: {$sum: "$amount"}}},
-            {$sort: {total : -1}}
+          categoryBreakdown: [
+            { $match: { type: "expense" } },
+            { $group: { _id: "$category", total: { $sum: "$amount" } } },
+            { $sort: { total: -1 } }
           ],
           dailySpending: [
             { $match: { type: "expense" } },
@@ -196,29 +208,33 @@ async function getTransactionStatsController(req, res) {
                 _id: { $dateToString: { format: "%Y-%m-%d", date: "$date" } },
                 total: { $sum: "$amount" }
               }
-            }, 
-            { $sort: { _id: 1 } } 
+            },
+            { $sort: { _id: 1 } }
           ]
         }
       }
     ]);
-    const recentTransactions = await transactionModel.find({userId: userId}).sort({date: -1, createdAt: -1}).limit(5)
+    const recentTransactions = await transactionModel.find({ userId: userId }).sort({ date: -1, createdAt: -1 }).limit(5)
     const result = stats[0];
     const overall = result.overallStats[0] || { totalIncome: 0, totalExpenses: 0, balance: 0 };
-                        
+
+    /* Rename aggregation group keys so the frontend never sees `_id` */
+    const categoryBreakdown = result.categoryBreakdown.map(({ _id, total }) => ({ name: _id, total }));
+    const dailySpending     = result.dailySpending.map(({ _id, total })     => ({ date: _id, total }));
+
     res.status(200).json({
       success: true,
       data: {
         totalIncome: overall.totalIncome,
         totalExpenses: overall.totalExpenses,
         balance: overall.balance,
-        categoryBreakdown: result.categoryBreakdown,
-        dailySpending: result.dailySpending,
-        recentTransactions: recentTransactions
+        categoryBreakdown,
+        dailySpending,
+        recentTransactions: recentTransactions.map(t => t.toJSON()),
       }
     });
-  }catch(error){
-     res.status(500).json({
+  } catch (error) {
+    res.status(500).json({
       success: false,
       error: error.message
     });
@@ -227,4 +243,4 @@ async function getTransactionStatsController(req, res) {
 
 
 
-export default { createTransactionController, getTransactionController, updateTransactionController, deleteTransactionController,getTransactionStatsController }
+export default { createTransactionController, getTransactionController, updateTransactionController, deleteTransactionController, getTransactionStatsController }

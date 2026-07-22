@@ -11,16 +11,16 @@ const apiClient = axios.create({
 
 // Request Interceptor
 apiClient.interceptors.request.use(
-  (config) =>{
+  (config) => {
     const token = localStorage.getItem("token")
-    if(token){
+    if (token) {
       config.headers.Authorization = `Bearer ${token}`
-  }
-   return config
-    },
-   ( error) =>{
+    }
+    return config
+  },
+  (error) => {
     return Promise.reject(error)
-   }
+  }
 )
 
 //Response interceptor

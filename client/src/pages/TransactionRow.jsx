@@ -20,7 +20,7 @@ const CATEGORY_EMOJI = {
   'Other': '📂',
 }
 
-const TransactionRow = ({ transaction }) => {
+const TransactionRow = ({ transaction ,setIsModalOpen, setEditingTransaction, setIsDeleteModalOpen, setDeletingTransaction }) => {
   const isExpense = transaction.type?.toLowerCase() === 'expense'
   const emoji = CATEGORY_EMOJI[transaction.category] ?? '📂'
 
@@ -62,17 +62,91 @@ const TransactionRow = ({ transaction }) => {
         </div>
       </div>
 
-      {/* Right: amount + type badge */}
-      <div className="flex flex-col items-end gap-1 shrink-0">
-        <span className="text-sm font-bold" style={{ color: amountColor }}>
-          {isExpense ? '-' : '+'}₹{Number(transaction.amount).toLocaleString('en-IN')}
-        </span>
-        <span
-          className="text-[10px] font-semibold px-1.5 py-0.5 rounded-md uppercase tracking-wide"
-          style={{ background: badgeBg, color: badgeColor }}
+      {/* Right: edit button + amount + type badge */}
+      <div className="flex items-center gap-3 shrink-0">
+
+        {/* Edit button */}
+        <button onClick={()=>{
+          setIsModalOpen(true)
+          setEditingTransaction(transaction)}}
+          aria-label="Edit transaction"
+          className="
+            group inline-flex items-center justify-center
+            w-7 h-7 rounded-lg
+            text-slate-400
+            bg-transparent border border-transparent
+            transition-all duration-150
+            hover:bg-sky-50 hover:text-sky-500 hover:border-sky-100
+            active:scale-95 active:bg-sky-100
+            focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-300 focus-visible:ring-offset-1
+          "
         >
-          {transaction.type}
-        </span>
+          {/* Pencil / edit SVG */}
+          <svg
+            className="w-3.5 h-3.5 transition-transform duration-150 group-hover:scale-110"
+            viewBox="0 0 16 16"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.7"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M11.5 2.5a1.414 1.414 0 0 1 2 2L5 13H3v-2L11.5 2.5z" />
+            <path d="M9.5 4.5l2 2" />
+          </svg>
+        </button>
+
+        {/* Delete button */}
+        <button
+          onClick={() => {
+            setIsDeleteModalOpen(true);
+            setDeletingTransaction(transaction);
+            
+          }}
+          aria-label="Delete transaction"
+          className="
+            group inline-flex items-center justify-center
+            w-7 h-7 rounded-lg
+            text-slate-400
+            bg-transparent border border-transparent
+            transition-all duration-150
+            hover:bg-rose-50 hover:text-rose-500 hover:border-rose-100
+            active:scale-95 active:bg-rose-100
+            focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-300 focus-visible:ring-offset-1
+          "
+        >
+          {/* Trash SVG */}
+          <svg
+            className="w-3.5 h-3.5 transition-transform duration-150 group-hover:scale-110"
+            viewBox="0 0 16 16"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.7"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+          >
+            <polyline points="2 4 14 4" />
+            <path d="M5 4V3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1" />
+            <path d="M6 7v5M10 7v5" />
+            <rect x="3" y="4" width="10" height="9" rx="1" />
+          </svg>
+        </button>
+
+        {/* Amount + badge */}
+        <div className="flex flex-col items-end gap-1">
+          <span className="text-sm font-bold" style={{ color: amountColor }}>
+            {isExpense ? '-' : '+'}₹{Number(transaction.amount).toLocaleString('en-IN')}
+          </span>
+          <span
+            className="text-[10px] font-semibold px-1.5 py-0.5 rounded-md uppercase tracking-wide"
+            style={{ background: badgeBg, color: badgeColor }}
+          >
+            {transaction.type}
+          </span>
+        </div>
+
       </div>
     </div>
   )

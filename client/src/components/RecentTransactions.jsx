@@ -37,7 +37,7 @@ const RecentTransactions = ({transactions = []}) => {
        {/* List Section */}
       <div className="divide-y divide-slate-50">
         {transactions.map((txn, index) => (
-          <div key={txn._id || index} className="px-4 sm:px-6 py-3.5 sm:py-4 flex items-center justify-between gap-3 hover:bg-slate-50/70 transition-colors duration-150">
+          <div key={txn.id || index} className="px-4 sm:px-6 py-3.5 sm:py-4 flex items-center justify-between gap-3 hover:bg-slate-50/70 transition-colors duration-150">
             
             {/* Left Side: Icon & Details */}
             <div className="flex items-center gap-3 min-w-0">

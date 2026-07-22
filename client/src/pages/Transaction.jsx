@@ -4,6 +4,16 @@ import { useState, useEffect } from 'react';
 import TransactionRow from './TransactionRow';
 import AddTransactionModel from '../components/AddTransactionModel';
 import { useSearchParams } from "react-router-dom";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 /* ═══════════════════════════════════════════════════════════════
    TRANSACTION PAGE
@@ -22,6 +32,9 @@ const Transaction = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [isInitialized, setIsInitialized] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingTransaction, setEditingTransaction] = useState(null);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [deletingTransaction, setDeletingTransaction] = useState(null);
 
   /* -- Fetch transactions from API -- */
   const fetchTransactions = async () => {
@@ -33,6 +46,7 @@ const Transaction = () => {
       if (response.data?.success && response.data?.data) {
         setTransactionData(response.data.data);
       }
+
     } catch (err) {
       console.error("Error fetching transactions:", err);
       setError(err.response?.data?.message || "Failed to load transaction data");
@@ -40,6 +54,19 @@ const Transaction = () => {
       setLoading(false);
     }
   };
+
+  const handleDelete = async () => {
+    try {
+      await apiClient.delete(`/transactions/${deletingTransaction.id}`);
+      console.log("Delted transaction successfully")
+      fetchTransactions()
+    } catch (error) {
+      console.error("Error deleting transaction:", error);
+    } finally {
+      setIsDeleteModalOpen(false)
+      setDeletingTransaction(null)
+    }
+  }
 
   /* -- Initialise state from URL on mount -- */
   useEffect(() => {
@@ -166,10 +193,9 @@ const Transaction = () => {
   ];
 
   const chipClass = (active) =>
-    `inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all duration-200 ${
-      active
-        ? "bg-sky-50 text-sky-600 border-sky-300"
-        : "bg-white text-slate-600 border-slate-200 hover:border-sky-300 hover:bg-sky-50 hover:text-sky-600"
+    `inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all duration-200 ${active
+      ? "bg-sky-50 text-sky-600 border-sky-300"
+      : "bg-white text-slate-600 border-slate-200 hover:border-sky-300 hover:bg-sky-50 hover:text-sky-600"
     }`;
 
   return (
@@ -313,11 +339,10 @@ const Transaction = () => {
                 key={t}
                 onClick={() => setType(t)}
                 id={`txn-type-${t.toLowerCase()}`}
-                className={`px-4 py-1.5 rounded-lg text-xs font-semibold capitalize border transition-all duration-200 ${
-                  type === t
+                className={`px-4 py-1.5 rounded-lg text-xs font-semibold capitalize border transition-all duration-200 ${type === t
                     ? "bg-sky-500 text-white border-sky-500 shadow-sm"
                     : "bg-white text-slate-500 border-slate-200 hover:border-slate-300 hover:bg-slate-50"
-                }`}
+                  }`}
               >
                 {t}
               </button>
@@ -484,7 +509,7 @@ const Transaction = () => {
                   </div>
                   <div className="divide-y divide-slate-50">
                     {groupedTransactions[dateLabel].map((transaction) => (
-                      <TransactionRow key={transaction._id} transaction={transaction} />
+                      <TransactionRow setIsModalOpen={setIsModalOpen} setEditingTransaction={setEditingTransaction} setIsDeleteModalOpen={setIsDeleteModalOpen} setDeletingTransaction={setDeletingTransaction} key={transaction.id} transaction={transaction} />
                     ))}
                   </div>
                 </div>
@@ -528,7 +553,82 @@ const Transaction = () => {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onSuccess={fetchTransactions}
+        editingTransaction={editingTransaction}
       />
+      <AlertDialog open={isDeleteModalOpen} onOpenChange={setIsDeleteModalOpen}>
+        <AlertDialogContent
+          className="p-0 gap-0 border-0 overflow-hidden max-w-sm w-full"
+          style={{
+            background: 'linear-gradient(145deg, rgba(255,255,255,0.98) 0%, rgba(255,241,242,0.95) 100%)',
+            boxShadow: '0 24px 64px rgba(244,63,94,0.12), 0 8px 24px rgba(0,0,0,0.08), 0 0 0 1px rgba(244,63,94,0.10)',
+            backdropFilter: 'blur(24px)',
+            borderRadius: '20px',
+          }}
+        >
+          {/* Header */}
+          <div
+            className="px-6 pt-6 pb-5 border-b border-rose-50"
+            style={{ background: 'linear-gradient(135deg, rgba(244,63,94,0.04) 0%, rgba(251,113,133,0.03) 100%)' }}
+          >
+            <AlertDialogHeader className="flex-row items-center gap-3 text-left place-items-start">
+              {/* Icon medallion */}
+              <div
+                className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+                style={{
+                  background: 'linear-gradient(135deg, #F43F5E 0%, #FB7185 100%)',
+                  boxShadow: '0 4px 12px rgba(244,63,94,0.30)',
+                }}
+              >
+                <svg className="w-5 h-5 text-white" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <polyline points="2 4 14 4" />
+                  <path d="M5 4V3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1" />
+                  <path d="M6 7v5M10 7v5" />
+                  <rect x="3" y="4" width="10" height="9" rx="1" />
+                </svg>
+              </div>
+              <div>
+                <AlertDialogTitle className="text-base font-bold text-slate-900 tracking-tight leading-tight">
+                  Delete Transaction?
+                </AlertDialogTitle>
+                <AlertDialogDescription className="text-xs text-slate-400 mt-0.5 font-medium">
+                  This action is permanent and cannot be undone.
+                </AlertDialogDescription>
+              </div>
+            </AlertDialogHeader>
+          </div>
+
+          {/* Body */}
+          <div className="px-6 py-5">
+            <p className="text-sm text-slate-500 leading-relaxed">
+              The transaction <span className="font-semibold text-slate-700">
+                "{deletingTransaction?.description || deletingTransaction?.category || 'this entry'}"
+              </span> will be permanently removed from your records.
+            </p>
+          </div>
+
+          {/* Footer */}
+          <AlertDialogFooter
+            className="px-6 pb-6 pt-0 border-0 bg-transparent flex-row gap-3 sm:justify-end"
+            style={{ margin: 0, borderRadius: 0 }}
+          >
+            <AlertDialogCancel
+              className="flex-1 sm:flex-none py-2.5 px-5 text-sm font-semibold text-slate-500 rounded-xl border border-slate-200 bg-white/70 hover:bg-slate-50 hover:text-slate-700 transition-all duration-200 focus-visible:ring-2 focus-visible:ring-slate-300"
+            >
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDelete}
+              className="flex-1 sm:flex-none py-2.5 px-5 text-sm font-semibold text-white rounded-xl transition-all duration-200 hover:-translate-y-0.5 active:scale-95 focus-visible:ring-2 focus-visible:ring-rose-400 focus-visible:ring-offset-2"
+              style={{
+                background: 'linear-gradient(135deg, #F43F5E 0%, #FB923C 100%)',
+                boxShadow: '0 4px 14px rgba(244,63,94,0.35)',
+              }}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

@@ -20,7 +20,7 @@ const DailySpendingChart = ({ data = [] }) => {
 
   const formattedData = data.map(item => {
     try {
-      const dataObj = new Date(item._id);
+      const dataObj = new Date(item.date);
       const formattedDate = dataObj.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
       return {                          // ✅ Fix 1: was missing — caused every element to be undefined
         ...item,
@@ -29,7 +29,7 @@ const DailySpendingChart = ({ data = [] }) => {
     } catch (error) {
       return {
         ...item,
-        displayDate: item._id,         // ✅ Fix 2: was `formattedData` (self-reference, always undefined)
+        displayDate: item.date,         // aggregation date key (was `_id`)
       };
     }
   })

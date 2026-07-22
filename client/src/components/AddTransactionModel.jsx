@@ -1,7 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState,useEffect } from 'react';
 import {
   Dialog,
-  DialogClose,
   DialogContent,
   DialogDescription,
   DialogTitle,
@@ -16,10 +15,10 @@ const expenseCategories = [
 ];
 
 const incomeCategories = [
-  "Salary", "Freelancing", "Investments", "Bonus", "Gift", "Other"
+  "Salary", "Freelancing", "ROI", "Bonus", "Gift", "Other"
 ];
 
-const AddTransactionModel = ({ isOpen, onClose,onSuccess }) => {
+const AddTransactionModel = ({ isOpen, onClose,onSuccess,editingTransaction }) => {
 
   const [txnType, setTxnType] = useState('expense');
   const [serverError, setServerError] = useState(null);
@@ -44,14 +43,22 @@ const AddTransactionModel = ({ isOpen, onClose,onSuccess }) => {
   const onSubmit = async (data) => {
     setServerError(null);
     try {
-      await apiClient.post('/transactions', {
+      if(!editingTransaction){
+        await apiClient.post('/transactions', {
         ...data,
         type: txnType,
         amount: Number(data.amount),
       });
-      onSuccess();
-      reset();
-      onClose(false); // close the modal
+      }else{
+        await apiClient.put(`/transactions/${editingTransaction.id}`, {
+          ...data,
+          type: txnType,
+          amount: Number(data.amount),
+        });
+      }
+       onSuccess();
+        reset();
+        onClose(false); // close the modal
     } catch (err) {
       setServerError(err.response?.data?.message || 'Something went wrong. Please try again.');
     }
@@ -62,6 +69,20 @@ const AddTransactionModel = ({ isOpen, onClose,onSuccess }) => {
     // Reset category when switching type so stale value isn't submitted
     reset((prev) => ({ ...prev, category: '' }));
   };
+
+  useEffect(() => {
+ 
+  if(!editingTransaction) return
+  reset({
+    amount: editingTransaction.amount,
+    description: editingTransaction.description,
+    category: editingTransaction.category,
+   date: new Date(editingTransaction.date).toISOString().split("T")[0]
+  })
+  setTxnType(editingTransaction.type)
+    
+  }, [editingTransaction])
+  
 
   return (
     <div>
@@ -261,15 +282,15 @@ const AddTransactionModel = ({ isOpen, onClose,onSuccess }) => {
 
               {/* Footer Buttons */}
               <div className="flex gap-3 mt-6">
-                <DialogClose asChild>
+                
                   <button
                     type="button"
-                    onClick={() => { reset(); setServerError(null); }}
+                    onClick={() => { reset(); setServerError(null); onClose(false); }}
                     className="flex-1 py-2.5 text-sm font-semibold text-slate-500 rounded-xl border border-slate-200 bg-white/70 hover:bg-slate-50 hover:text-slate-700 transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300"
                   >
                     Cancel
                   </button>
-                </DialogClose>
+               
 
                 <button
                   type="submit"
