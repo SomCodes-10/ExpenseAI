@@ -1,4 +1,5 @@
 import React, { useState,useEffect } from 'react';
+import { toast } from 'sonner';
 import {
   Dialog,
   DialogContent,
@@ -27,6 +28,7 @@ const AddTransactionModel = ({ isOpen, onClose,onSuccess,editingTransaction }) =
     register,
     handleSubmit,
     reset,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm({
     defaultValues: {
@@ -43,31 +45,35 @@ const AddTransactionModel = ({ isOpen, onClose,onSuccess,editingTransaction }) =
   const onSubmit = async (data) => {
     setServerError(null);
     try {
-      if(!editingTransaction){
+      if (!editingTransaction) {
         await apiClient.post('/transactions', {
-        ...data,
-        type: txnType,
-        amount: Number(data.amount),
-      });
-      }else{
+          ...data,
+          type: txnType,
+          amount: Number(data.amount),
+        });
+        toast.success('Transaction added.');
+      } else {
         await apiClient.put(`/transactions/${editingTransaction.id}`, {
           ...data,
           type: txnType,
           amount: Number(data.amount),
         });
+        toast.success('Transaction updated.');
       }
-       onSuccess();
-        reset();
-        onClose(false); // close the modal
+      onSuccess();
+      reset();
+      onClose(false);
     } catch (err) {
-      setServerError(err.response?.data?.message || 'Something went wrong. Please try again.');
+      const message = err.response?.data?.message || 'Something went wrong. Please try again.';
+      setServerError(message);
+      toast.error(message);
     }
   };
 
   const handleTypeSwitch = (type) => {
     setTxnType(type);
-    // Reset category when switching type so stale value isn't submitted
-    reset((prev) => ({ ...prev, category: '' }));
+    // Only clear the category field — do NOT reset the whole form
+    setValue('category', '', { shouldValidate: false });
   };
 
   useEffect(() => {

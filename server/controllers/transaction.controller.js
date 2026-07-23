@@ -44,9 +44,11 @@ async function createTransactionController(req, res) {
 async function getTransactionController(req, res) {
   try {
     let query = { userId: req.user.id };
-    const { type, categories, search, month } = req.query;
-    console.log(req.query);
-     console.log(query);
+    const { type, categories, search, month, page = 1, limit = 10 } = req.query;
+    const pageNum = parseInt(page, 10);
+    const limitNum = parseInt(limit, 10);
+    const skipValue = (pageNum - 1) * limitNum;
+   
 
     if (search) {
       query.description = {
@@ -56,9 +58,9 @@ async function getTransactionController(req, res) {
     } if (type) {
       query.type = type
     }
-      if (categories) {
-          query.category = { $in: categories.split(',') }; 
-        }
+    if (categories) {
+      query.category = { $in: categories.split(',') };
+    }
     if (month) {
       const [year, monthnum] = month.split('-')
       const startDate = new Date(year, monthnum - 1, 1)
@@ -71,18 +73,25 @@ async function getTransactionController(req, res) {
     }
 
 
-    const transactions = await transactionModel.find(query).sort({ date: -1 });
+    const transactions = await transactionModel.find(query).sort({ date: -1 }).skip(skipValue).limit(limitNum);
+     const totalTransactions = await transactionModel.countDocuments(query);
+    const totalPages = Math.ceil(totalTransactions / limitNum);
     res.status(200).json({
       success: true,
       count: transactions.length,
-      data: transactions
+      data: transactions,
+      currentPage: pageNum,
+      totalTransactions,
+      totalPages,
     })
+    console.log(req.query)
   } catch (error) {
     res.status(500).json({
       success: false,
       error: error.message
     })
   }
+
 }
 
 /**
@@ -220,7 +229,7 @@ async function getTransactionStatsController(req, res) {
 
     /* Rename aggregation group keys so the frontend never sees `_id` */
     const categoryBreakdown = result.categoryBreakdown.map(({ _id, total }) => ({ name: _id, total }));
-    const dailySpending     = result.dailySpending.map(({ _id, total })     => ({ date: _id, total }));
+    const dailySpending = result.dailySpending.map(({ _id, total }) => ({ date: _id, total }));
 
     res.status(200).json({
       success: true,

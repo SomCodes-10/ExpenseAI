@@ -7,7 +7,7 @@ const expenseCategories = [
 ];
 
 const incomeCategories = [
-  "Salary", "Freelancing", "Investments", "Bonus", "Gift", "Other"
+  "Salary", "Freelancing", "ROI", "Bonus", "Gift", "Other"
 ];
 
 const transactionValidationRules = [
