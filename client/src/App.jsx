@@ -5,6 +5,7 @@ import Register from './pages/Register';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Transaction from './pages/Transaction';
+import Insights from './pages/Insights';
 import ProtectedRoute from './components/protectedRoute';
 function App() {
   return (
@@ -35,6 +36,11 @@ function App() {
         <Route path="/transaction" element={ 
           <ProtectedRoute>
           <Transaction /> 
+          </ProtectedRoute>
+          } />
+        <Route path="/insights" element={
+          <ProtectedRoute>
+          <Insights />
           </ProtectedRoute>
           } />
       </Routes>

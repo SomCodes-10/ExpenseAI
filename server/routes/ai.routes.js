@@ -5,9 +5,9 @@ import aiReport from "../controllers/ai.controller.js";
 const aiRouter = express.Router()
 
 /**
- * @route GET
- * @description provides the ai report to the user
- * @access private
+ * @route POST /api/ai/report
+ * @description Provides the AI report to the authenticated user
+ * @access Private
  */
 
 aiRouter.post("/report",authUser,aiReport.getAiReportController)

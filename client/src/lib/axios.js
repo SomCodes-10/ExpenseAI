@@ -6,7 +6,7 @@ const apiClient = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
-  timeout: 10000
+  timeout: 60000   // 60s — Gemini generation can take 15–30s
 });
 
 // Request Interceptor

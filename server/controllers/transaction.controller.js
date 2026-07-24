@@ -1,5 +1,5 @@
-import mongoose from "mongoose";
 import transactionModel from "../model/transaction.model.js";
+import getTransactionStats from "../services/transactionStats.service.js";
 
 /**
  * @route   POST /api/transactions
@@ -172,80 +172,20 @@ async function deleteTransactionController(req, res) {
 /**
  *  @route   GET /api/transactions/stats
  * @desc    Get aggregated transaction statistics for the dashboard.
- * Calculates overall totals, category-wise breakdown, and daily spending using MongoDB $facet.
+ * Delegates all aggregation logic to the transactionStats service.
  *@access  Private (Requires valid JWT)
  */
 async function getTransactionStatsController(req, res) {
   try {
-    const userId = new mongoose.Types.ObjectId(req.user.id)
-    const stats = await transactionModel.aggregate([
-      {
-        $match: { userId: userId }
-      },
-      {
-        $facet: {
-          overallStats: [
-            {
-              $group: {
-                _id: null,
-                totalIncome: {
-                  $sum: { $cond: [{ $eq: ["$type", "income"] }, "$amount", 0] }
-                },
-                totalExpenses: {
-                  $sum: { $cond: [{ $eq: ["$type", "expense"] }, "$amount", 0] }
-                }
-              }
-            },
-            {
-              $project: {
-                _id: 0,
-                totalIncome: 1,
-                totalExpenses: 1,
-                balance: { $subtract: ["$totalIncome", "$totalExpenses"] }
-              }
-            }
-          ],
-          categoryBreakdown: [
-            { $match: { type: "expense" } },
-            { $group: { _id: "$category", total: { $sum: "$amount" } } },
-            { $sort: { total: -1 } }
-          ],
-          dailySpending: [
-            { $match: { type: "expense" } },
-            {
-              $group: {
-                _id: { $dateToString: { format: "%Y-%m-%d", date: "$date" } },
-                total: { $sum: "$amount" }
-              }
-            },
-            { $sort: { _id: 1 } }
-          ]
-        }
-      }
-    ]);
-    const recentTransactions = await transactionModel.find({ userId: userId }).sort({ date: -1, createdAt: -1 }).limit(5)
-    const result = stats[0];
-    const overall = result.overallStats[0] || { totalIncome: 0, totalExpenses: 0, balance: 0 };
-
-    /* Rename aggregation group keys so the frontend never sees `_id` */
-    const categoryBreakdown = result.categoryBreakdown.map(({ _id, total }) => ({ name: _id, total }));
-    const dailySpending = result.dailySpending.map(({ _id, total }) => ({ date: _id, total }));
-
+    const stats = await getTransactionStats(req.user.id);
     res.status(200).json({
       success: true,
-      data: {
-        totalIncome: overall.totalIncome,
-        totalExpenses: overall.totalExpenses,
-        balance: overall.balance,
-        categoryBreakdown,
-        dailySpending,
-        recentTransactions: recentTransactions.map(t => t.toJSON()),
-      }
+      data: stats,
     });
   } catch (error) {
     res.status(500).json({
       success: false,
-      error: error.message
+      error: error.message,
     });
   }
 }
